@@ -20,6 +20,7 @@ def build_llm_client(config: dict[str, Any], *, sample_mode: bool = False):
             reasoning_effort=llm_config["reasoning_effort"],
             timeout_seconds=int(llm_config.get("timeout_seconds", 120)),
             executable=codex_config.get("executable", "codex"),
+            ephemeral=bool(codex_config.get("ephemeral", True)),
             max_output_tokens=llm_config.get("max_output_tokens"),
             extra_args=list(codex_config.get("extra_args", [])),
         )

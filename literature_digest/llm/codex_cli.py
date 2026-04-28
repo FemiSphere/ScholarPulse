@@ -16,6 +16,7 @@ class CodexCLIClient:
     reasoning_effort: str
     timeout_seconds: int = 120
     executable: str = "codex"
+    ephemeral: bool = True
     max_output_tokens: int | None = None
     extra_args: list[str] = field(default_factory=list)
 
@@ -30,6 +31,8 @@ class CodexCLIClient:
             "-c",
             f"model_reasoning_effort={self.reasoning_effort}",
         ]
+        if self.ephemeral:
+            args.append("--ephemeral")
         if self.max_output_tokens:
             args.extend(["-c", f"model_max_output_tokens={self.max_output_tokens}"])
         args.extend(self.extra_args)

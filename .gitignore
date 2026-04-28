@@ -5,6 +5,7 @@ Gmail_oauth*.md
 .env
 data/
 outputs/
+logs/
 *.egg-info/
 .pytest_cache/
 __pycache__/

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 from .config import load_config
@@ -25,23 +26,35 @@ def main(argv: list[str] | None = None) -> int:
     base_dir = Path.cwd()
     load_dotenv_file(base_dir / ".env")
     config = load_config(args.config)
+    progress = ProgressReporter(
+        enabled=bool(config.get("progress", {}).get("enabled", True)) and not args.quiet,
+        show_timestamps=bool(config.get("progress", {}).get("show_timestamps", True)),
+    )
 
     dry_run = _resolve_dry_run(args, config)
     if args.max_emails is not None:
         config["gmail"]["max_emails_per_run"] = args.max_emails
 
     sample_mode, warnings = _should_use_sample(args, config, dry_run, base_dir)
+    progress.step("初始化完成")
     llm = build_llm_client(config, sample_mode=sample_mode)
 
     if sample_mode:
+        progress.step("读取内置样例邮件")
         emails = sample_emails()
     else:
+        progress.step(
+            f"搜索 Gmail 未读邮件，query={config['gmail'].get('query', 'is:unread')!r}，"
+            f"max={config['gmail']['max_emails_per_run']}"
+        )
         gmail = GmailClient(config, base_dir=base_dir)
         emails = gmail.fetch_unread_emails(max_results=config["gmail"]["max_emails_per_run"])
+    progress.step(f"邮件读取完成：{len(emails)} 封")
 
     skipped: list[SkippedEmail] = []
     accepted = []
-    for email in emails:
+    for index, email in enumerate(emails, start=1):
+        progress.item(index, len(emails), f"过滤邮件：{_shorten(email.subject, 58)}")
         decision = classify_email(email, config)
         if decision.skip:
             skipped.append(
@@ -54,17 +67,34 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             accepted.append(email)
+    progress.step(f"邮件过滤完成：保留 {len(accepted)} 封，跳过 {len(skipped)} 封")
 
+    progress.step("解析论文条目")
     entries = parse_emails(accepted)
+    progress.step(f"解析完成：{len(entries)} 个候选条目")
+
+    progress.step("执行 DOI、URL、标题和模糊标题去重")
     deduped = deduplicate_entries(
         entries,
         fuzzy_title_threshold=int(config["parsing"].get("fuzzy_title_threshold", 92)),
     )
+    progress.step(
+        f"去重完成：保留 {len(deduped.unique_entries)} 个条目，移除 {deduped.duplicates_removed} 个重复项"
+    )
+
     interests_path = _resolve_path(config["research_interests"]["path"], base_dir)
     interest_text = read_research_interests(interests_path)
     if deduped.unique_entries:
+        progress.step("调用 LLM 提炼近期研究兴趣")
         interest_profile = analyze_research_interests(interest_text, llm)
-        ranked = rank_papers(deduped.unique_entries, interest_profile, llm)
+        progress.step(f"调用 LLM 分批排序和摘要：{len(deduped.unique_entries)} 篇论文")
+        ranked = rank_papers(
+            deduped.unique_entries,
+            interest_profile,
+            llm,
+            progress=lambda current, total: progress.item(current, total, "LLM 排序批次"),
+        )
+        progress.step("LLM 排序和摘要完成")
     else:
         warnings.append("没有找到可处理的未读论文条目，本次生成空 digest。")
         interest_profile = fallback_interest_profile(interest_text)
@@ -92,6 +122,7 @@ def main(argv: list[str] | None = None) -> int:
         skipped=skipped if config["filtering"].get("audit_skipped_emails", True) else [],
         warnings=warnings,
     )
+    progress.step("写出 Markdown 和 HTML digest")
     output_paths = write_digests(
         run,
         _resolve_path(config["digest"]["output_dir"], base_dir),
@@ -99,9 +130,11 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if not dry_run and not sample_mode and config["gmail"].get("mark_as_read", False):
+        progress.step(f"标记已处理邮件为已读：{len(accepted)} 封")
         gmail = GmailClient(config, base_dir=base_dir)
         gmail.mark_as_read([email.id for email in accepted])
 
+    progress.done("运行完成")
     print("Digest written:")
     for output_path in output_paths:
         print(f"  - {output_path}")
@@ -124,6 +157,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-emails", type=int, help="Override gmail.max_emails_per_run.")
     parser.add_argument("--sample", action="store_true", help="Use built-in sample emails.")
     parser.add_argument("--date", help="Override output date label, e.g. 2026-04-28.")
+    parser.add_argument("--quiet", action="store_true", help="Suppress progress messages.")
     return parser
 
 
@@ -181,3 +215,43 @@ def _resolve_path(value: str | Path, base_dir: Path) -> Path:
     if path.is_absolute():
         return path
     return base_dir / path
+
+
+class ProgressReporter:
+    def __init__(self, *, enabled: bool = True, show_timestamps: bool = True) -> None:
+        self.enabled = enabled
+        self.show_timestamps = show_timestamps
+        self.started_at = perf_counter()
+
+    def step(self, message: str) -> None:
+        if not self.enabled:
+            return
+        print(f"{self._prefix()} {message}", flush=True)
+
+    def item(self, current: int, total: int, message: str) -> None:
+        if not self.enabled:
+            return
+        width = 24
+        ratio = current / total if total else 1
+        filled = min(width, max(0, int(width * ratio)))
+        bar = "#" * filled + "-" * (width - filled)
+        print(f"{self._prefix()} [{bar}] {current}/{total} {message}", flush=True)
+
+    def done(self, message: str) -> None:
+        if not self.enabled:
+            return
+        elapsed = perf_counter() - self.started_at
+        print(f"{self._prefix()} {message}，耗时 {elapsed:.1f}s", flush=True)
+
+    def _prefix(self) -> str:
+        if not self.show_timestamps:
+            return "[literature-digest]"
+        return f"[{datetime.now().strftime('%H:%M:%S')}]"
+
+
+def _shorten(value: str, max_length: int) -> str:
+    text = " ".join((value or "(no subject)").split())
+    if len(text) <= max_length:
+        return text
+    return text[: max_length - 3].rstrip() + "..."
+

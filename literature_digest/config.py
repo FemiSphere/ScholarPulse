@@ -20,7 +20,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "reasoning_effort": "low",
         "timeout_seconds": 120,
         "max_output_tokens": 4000,
-        "codex_cli": {"executable": "codex", "extra_args": []},
+        "codex_cli": {"executable": "codex", "ephemeral": True, "extra_args": []},
         "openai_compatible": {
             "base_url": "",
             "api_key_env": "OPENAI_API_KEY",
@@ -70,6 +70,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "redact_secrets_in_logs": True,
         "allow_sample_without_credentials": True,
         "allow_offline_llm_for_sample": True,
+    },
+    "progress": {
+        "enabled": True,
+        "show_timestamps": True,
     },
 }
 

@@ -1,4 +1,4 @@
-# 每日科研文献摘要
+# 科研文献摘要
 
 这是一个本地运行的每日科研文献摘要工作流，用于从专门的学术 Gmail 邮箱读取 Google Scholar alerts、期刊目录提醒、RSS 邮件订阅等邮件，提取论文条目，去重，调用 LLM 根据近期研究兴趣排序，并同时生成中文 Markdown 摘要和 HTML 浏览器阅读页。
 
@@ -249,7 +249,7 @@ extra_body:
 
 ## 七、后续接入自动化
 
-等手动 dry-run 稳定后，可以让 Codex Automations 每天定时运行：
+等手动 dry-run 稳定后，可以让 Codex Automations 每天、每周或每隔几天定时运行：
 
 ```powershell
 Set-Location E:\Researching\My-literature-digest
@@ -257,3 +257,9 @@ python -m literature_digest --dry-run --max-emails 50
 ```
 
 如果之后希望处理后自动标记已读，把 `config.local.yaml` 中的 `gmail.mark_as_read` 改为 `true`，并使用非 dry-run 运行。
+
+更详细的 Codex Automations、避免 Codex CLI 中间会话持久化、Windows 桌面一键运行方案见：
+
+```text
+docs\automation-and-shortcuts.md
+```

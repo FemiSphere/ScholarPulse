@@ -39,7 +39,7 @@ def write_digests(run: DigestRun, output_dir: str | Path, formats: list[str] | N
 
 def render_markdown(run: DigestRun) -> str:
     lines: list[str] = []
-    lines.append(f"# 每日科研文献摘要 - {run.date_label}")
+    lines.append(f"# 科研文献摘要 - {run.date_label}")
     lines.append("")
     if run.warnings:
         lines.append("## 运行提示")
@@ -108,7 +108,7 @@ def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>每日科研文献摘要 - {escape(run.date_label)}</title>
+  <title>科研文献摘要 - {escape(run.date_label)}</title>
   <style>
     :root {{
       --bg: #f6f4ee;
@@ -275,7 +275,7 @@ def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
 <body>
   <header>
     <div class="shell">
-      <h1>每日科研文献摘要</h1>
+      <h1>科研文献摘要</h1>
       <p class="subtitle">{escape(run.date_label)} · 浏览器阅读版 · 共 {len(run.papers)} 篇候选论文</p>
     </div>
   </header>

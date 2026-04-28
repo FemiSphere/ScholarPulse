@@ -43,9 +43,9 @@ def test_write_digests_creates_markdown_and_html(tmp_path):
     assert tmp_path / "2026-04-28-digest.md" in paths
     assert tmp_path / "2026-04-28-digest.html" in paths
     html = (tmp_path / "2026-04-28-digest.html").read_text(encoding="utf-8")
-    assert "每日科研文献摘要" in html
+    assert "科研文献摘要" in html
+    assert "每日科研文献摘要" not in html
     assert "data-filter=\"high\"" in html
     assert "type=\"search\"" in html
     assert "toc.png" in html
     assert "https://example.org/paper" in html
-

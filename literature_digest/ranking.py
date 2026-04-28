@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from typing import Any
 
 from .interests import profile_to_json
@@ -14,9 +15,13 @@ def rank_papers(
     llm: LLMClient,
     *,
     batch_size: int = 20,
+    progress: Callable[[int, int], None] | None = None,
 ) -> list[RankedPaper]:
     ranked: list[RankedPaper] = []
-    for offset in range(0, len(entries), batch_size):
+    total_batches = (len(entries) + batch_size - 1) // batch_size
+    for batch_number, offset in enumerate(range(0, len(entries), batch_size), start=1):
+        if progress:
+            progress(batch_number, total_batches)
         batch = entries[offset : offset + batch_size]
         payload = _rank_batch(batch, profile, llm, offset)
         ranked.extend(payload)
@@ -119,4 +124,3 @@ def _ranked_from_payload(entry: PaperEntry, payload: dict[str, Any]) -> RankedPa
 
 def count_relevance(papers: list[RankedPaper], level: RelevanceLevel) -> int:
     return sum(1 for paper in papers if paper.relevance == level)
-
