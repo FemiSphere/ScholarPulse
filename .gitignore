@@ -1,0 +1,13 @@
+config.local.yaml
+credentials.json
+token.json
+Gmail_oauth*.md
+.env
+data/
+outputs/
+*.egg-info/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+.venv/
+venv/

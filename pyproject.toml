@@ -1,0 +1,30 @@
+[project]
+name = "literature-digest"
+version = "0.1.0"
+description = "Local daily academic literature digest workflow."
+requires-python = ">=3.10"
+dependencies = [
+  "beautifulsoup4>=4.12",
+  "google-api-python-client>=2.120",
+  "google-auth>=2.28",
+  "google-auth-oauthlib>=1.2",
+  "python-dotenv>=1.0",
+  "PyYAML>=6.0",
+  "rapidfuzz>=3.6",
+  "requests>=2.31",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+
+[project.scripts]
+literature-digest = "literature_digest.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["literature_digest*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
