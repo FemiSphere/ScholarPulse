@@ -18,19 +18,27 @@ def write_digest(run: DigestRun, output_dir: str | Path) -> Path:
     return target
 
 
-def write_digests(run: DigestRun, output_dir: str | Path, formats: list[str] | None = None) -> list[Path]:
+def write_digests(
+    run: DigestRun,
+    output_dir: str | Path,
+    formats: list[str] | None = None,
+    *,
+    overwrite_existing: bool = True,
+) -> list[Path]:
     target_dir = Path(output_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
     selected = [item.lower() for item in (formats or ["md", "html"])]
+    extensions = _selected_extensions(selected)
+    stem = _unique_output_stem(target_dir, f"{run.date_label}-digest", extensions, overwrite_existing)
     written: list[Path] = []
 
     if "md" in selected or "markdown" in selected:
-        markdown_path = target_dir / f"{run.date_label}-digest.md"
+        markdown_path = target_dir / f"{stem}.md"
         markdown_path.write_text(render_markdown(run), encoding="utf-8")
         written.append(markdown_path)
 
     if "html" in selected:
-        html_path = target_dir / f"{run.date_label}-digest.html"
+        html_path = target_dir / f"{stem}.html"
         html_path.write_text(render_html(run, target_dir), encoding="utf-8")
         written.append(html_path)
 
@@ -77,6 +85,32 @@ def render_markdown(run: DigestRun) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def _selected_extensions(selected: list[str]) -> list[str]:
+    extensions: list[str] = []
+    if "md" in selected or "markdown" in selected:
+        extensions.append(".md")
+    if "html" in selected:
+        extensions.append(".html")
+    return extensions
+
+
+def _unique_output_stem(
+    output_dir: Path,
+    base_stem: str,
+    extensions: list[str],
+    overwrite_existing: bool,
+) -> str:
+    if overwrite_existing or not extensions:
+        return base_stem
+    if not any((output_dir / f"{base_stem}{extension}").exists() for extension in extensions):
+        return base_stem
+    for index in range(2, 10000):
+        candidate = f"{base_stem}-{index}"
+        if not any((output_dir / f"{candidate}{extension}").exists() for extension in extensions):
+            return candidate
+    raise RuntimeError(f"Could not find an available output filename for {base_stem}")
+
+
 def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
     stats = run.stats
     stats_cards = [
@@ -111,42 +145,72 @@ def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
   <title>科研文献摘要 - {escape(run.date_label)}</title>
   <style>
     :root {{
-      --bg: #f6f4ee;
-      --surface: #fffdf8;
+      --bg: #f4f7f6;
+      --surface: #fbfcfa;
       --surface-strong: #ffffff;
-      --text: #202124;
-      --muted: #646b73;
-      --border: #ddd8cd;
-      --accent: #0f766e;
-      --accent-strong: #0b4f4a;
-      --high: #a63822;
-      --medium: #7a5b00;
-      --low: #56616d;
-      --shadow: 0 16px 36px rgba(32, 33, 36, 0.08);
+      --text: #17201c;
+      --muted: #64716b;
+      --border: #dce4df;
+      --accent: #13756d;
+      --accent-strong: #0a4a45;
+      --accent-soft: #e3f2ee;
+      --amber: #b7791f;
+      --rose: #b04436;
+      --slate: #607083;
+      --high: #b04436;
+      --medium: #b7791f;
+      --low: #607083;
+      --shadow: 0 18px 50px rgba(23, 32, 28, 0.10);
+      --shadow-soft: 0 8px 24px rgba(23, 32, 28, 0.07);
       color-scheme: light;
       font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
     }}
     * {{ box-sizing: border-box; }}
     body {{
       margin: 0;
-      background: var(--bg);
+      background:
+        linear-gradient(180deg, rgba(19, 117, 109, 0.08) 0%, rgba(244, 247, 246, 0) 380px),
+        var(--bg);
       color: var(--text);
       line-height: 1.65;
     }}
     a {{ color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-offset: 3px; }}
     header {{
-      padding: 34px 28px 24px;
-      border-bottom: 1px solid var(--border);
-      background: linear-gradient(180deg, #fffdf8 0%, #f6f4ee 100%);
+      padding: 42px 28px 28px;
+      border-bottom: 1px solid rgba(220, 228, 223, 0.82);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(19, 117, 109, 0.16), transparent 34%),
+        linear-gradient(135deg, #ffffff 0%, #f5faf8 54%, #eef3f0 100%);
     }}
     .shell {{ width: min(1180px, calc(100vw - 32px)); margin: 0 auto; }}
-    h1 {{ margin: 0 0 8px; font-size: 34px; line-height: 1.2; font-weight: 760; letter-spacing: 0; }}
+    .hero {{
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 28px;
+    }}
+    h1 {{ margin: 0 0 10px; font-size: 38px; line-height: 1.15; font-weight: 760; letter-spacing: 0; }}
     .subtitle {{ margin: 0; color: var(--muted); font-size: 15px; }}
+    .hero-summary {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(76px, 1fr));
+      gap: 8px;
+      min-width: 290px;
+    }}
+    .hero-summary div {{
+      border: 1px solid rgba(19, 117, 109, 0.18);
+      background: rgba(255, 255, 255, 0.76);
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: var(--shadow-soft);
+    }}
+    .hero-summary strong {{ display: block; font-size: 22px; line-height: 1.1; }}
+    .hero-summary span {{ display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }}
     .toolbar {{
       position: sticky;
       top: 0;
       z-index: 10;
-      background: rgba(246, 244, 238, 0.94);
+      background: rgba(244, 247, 246, 0.92);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
       padding: 14px 0;
@@ -154,10 +218,10 @@ def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
     .toolbar-row {{ display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; }}
     input[type="search"] {{
       width: 100%;
-      min-height: 42px;
+      min-height: 44px;
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 0 14px;
+      padding: 0 15px;
       background: var(--surface-strong);
       color: var(--text);
       font-size: 14px;
@@ -174,31 +238,38 @@ def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
       padding: 0 13px;
       font-size: 14px;
       cursor: pointer;
+      transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 140ms ease;
     }}
+    button:hover {{ transform: translateY(-1px); border-color: rgba(19, 117, 109, 0.38); }}
     button[aria-pressed="true"] {{ background: var(--accent); border-color: var(--accent); color: white; }}
-    main {{ padding: 26px 0 56px; }}
+    .secondary-actions button {{
+      color: var(--accent-strong);
+      background: #f8fbfa;
+    }}
+    main {{ padding: 28px 0 56px; }}
     .stats {{
       display: grid;
       grid-template-columns: repeat(7, minmax(110px, 1fr));
-      gap: 10px;
-      margin-bottom: 18px;
+      gap: 12px;
+      margin-bottom: 20px;
     }}
     .stat {{
-      background: var(--surface);
+      background: rgba(255, 255, 255, 0.86);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 13px 14px;
+      padding: 14px;
       min-height: 74px;
+      box-shadow: var(--shadow-soft);
     }}
-    .stat strong {{ display: block; font-size: 24px; line-height: 1.1; }}
+    .stat strong {{ display: block; font-size: 25px; line-height: 1.1; color: var(--accent-strong); }}
     .stat span {{ color: var(--muted); font-size: 13px; }}
     .panel {{
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 18px;
-      margin-bottom: 18px;
-      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-soft);
     }}
     .panel h2, .section-title {{ margin: 0 0 12px; font-size: 20px; line-height: 1.3; }}
     .topics {{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }}
@@ -206,50 +277,73 @@ def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
       display: inline-flex;
       align-items: center;
       border-radius: 999px;
-      background: #e6f2ef;
+      background: var(--accent-soft);
       color: var(--accent-strong);
       padding: 4px 10px;
       font-size: 12px;
+      font-weight: 650;
     }}
-    .paper-list {{ display: grid; gap: 16px; }}
+    .paper-list {{ display: grid; gap: 18px; }}
     .paper-card {{
       background: var(--surface-strong);
       border: 1px solid var(--border);
       border-left: 5px solid var(--low);
       border-radius: 8px;
-      padding: 18px;
-      box-shadow: var(--shadow);
+      padding: 20px 20px 18px;
+      box-shadow: var(--shadow-soft);
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
     }}
+    .paper-card:hover {{ transform: translateY(-2px); box-shadow: var(--shadow); border-color: rgba(19, 117, 109, 0.24); }}
     .paper-card[data-level="high"] {{ border-left-color: var(--high); }}
     .paper-card[data-level="medium"] {{ border-left-color: var(--medium); }}
     .paper-card[data-level="low"] {{ border-left-color: var(--low); }}
     .paper-top {{ display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }}
     .paper-card h3 {{ margin: 0 0 8px; font-size: 20px; line-height: 1.35; letter-spacing: 0; }}
     .meta {{ margin: 0 0 10px; color: var(--muted); font-size: 13px; }}
+    .venue {{
+      display: inline-flex;
+      width: fit-content;
+      margin: 0 0 10px;
+      padding: 4px 9px;
+      border-radius: 8px;
+      background: #eef6f3;
+      color: var(--accent-strong);
+      font-size: 13px;
+      font-weight: 700;
+    }}
     .score {{
       flex: 0 0 auto;
-      border-radius: 8px;
+      border-radius: 999px;
       border: 1px solid var(--border);
-      padding: 7px 10px;
-      color: var(--muted);
+      padding: 6px 11px;
+      color: var(--text);
       font-size: 13px;
+      font-weight: 700;
       background: #faf8f2;
+      white-space: nowrap;
     }}
+    .paper-card[data-level="high"] .score {{ color: var(--high); background: #fff1ee; border-color: #f0c7bf; }}
+    .paper-card[data-level="medium"] .score {{ color: var(--medium); background: #fff7df; border-color: #ead49f; }}
+    .paper-card[data-level="low"] .score {{ color: var(--low); background: #f2f5f7; border-color: #d4dde4; }}
     .summary {{ margin: 10px 0; }}
     details {{ margin-top: 10px; }}
     summary {{ cursor: pointer; color: var(--accent-strong); font-weight: 650; }}
+    details[open] {{ border-top: 1px solid var(--border); padding-top: 10px; }}
     .actions {{ display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }}
     .action {{
       display: inline-flex;
       align-items: center;
       min-height: 38px;
-      padding: 0 12px;
-      border: 1px solid var(--border);
+      padding: 0 13px;
+      border: 1px solid rgba(19, 117, 109, 0.26);
       border-radius: 8px;
-      background: #f7fbfa;
+      background: #f1faf7;
       text-decoration: none;
       font-size: 14px;
+      font-weight: 650;
+      transition: background 140ms ease, transform 140ms ease;
     }}
+    .action:hover {{ background: #e4f4f0; transform: translateY(-1px); }}
     .image-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 14px; }}
     .image-grid img {{
       width: 100%;
@@ -258,6 +352,7 @@ def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
       border: 1px solid var(--border);
       border-radius: 8px;
       background: white;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
     }}
     .skipped-list {{ margin: 0; padding-left: 18px; }}
     .skipped-list span, .skipped-list em {{ color: var(--muted); margin-left: 8px; font-size: 13px; }}
@@ -265,6 +360,8 @@ def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
     footer {{ color: var(--muted); font-size: 12px; padding: 28px 0; }}
     @media (max-width: 860px) {{
       h1 {{ font-size: 27px; }}
+      .hero {{ grid-template-columns: 1fr; align-items: start; }}
+      .hero-summary {{ min-width: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); }}
       .toolbar-row {{ grid-template-columns: 1fr; }}
       .stats {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
       .paper-top {{ display: block; }}
@@ -274,9 +371,16 @@ def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
 </head>
 <body>
   <header>
-    <div class="shell">
-      <h1>科研文献摘要</h1>
-      <p class="subtitle">{escape(run.date_label)} · 浏览器阅读版 · 共 {len(run.papers)} 篇候选论文</p>
+    <div class="shell hero">
+      <div>
+        <h1>科研文献摘要</h1>
+        <p class="subtitle">{escape(run.date_label)} · 浏览器阅读版 · 共 {len(run.papers)} 篇候选论文</p>
+      </div>
+      <div class="hero-summary" aria-label="相关性概览">
+        <div><strong>{stats.high_relevance}</strong><span>高相关</span></div>
+        <div><strong>{stats.medium_relevance}</strong><span>中相关</span></div>
+        <div><strong>{stats.low_relevance}</strong><span>低相关</span></div>
+      </div>
     </div>
   </header>
   <nav class="toolbar" aria-label="阅读工具">
@@ -287,6 +391,10 @@ def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
         <button type="button" data-filter="high" aria-pressed="false">高相关</button>
         <button type="button" data-filter="medium" aria-pressed="false">中相关</button>
         <button type="button" data-filter="low" aria-pressed="false">低相关</button>
+        <span class="secondary-actions">
+          <button type="button" id="expand-all">展开详情</button>
+          <button type="button" id="collapse-all">收起详情</button>
+        </span>
       </div>
     </div>
   </nav>
@@ -313,6 +421,8 @@ def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
     const search = document.querySelector('#search');
     const buttons = Array.from(document.querySelectorAll('[data-filter]'));
     const cards = Array.from(document.querySelectorAll('.paper-card'));
+    const expandAll = document.querySelector('#expand-all');
+    const collapseAll = document.querySelector('#collapse-all');
     const empty = document.querySelector('#empty');
     let activeFilter = 'all';
 
@@ -337,6 +447,12 @@ def render_html(run: DigestRun, output_dir: str | Path | None = None) -> str:
       }});
     }}
     search.addEventListener('input', applyFilters);
+    expandAll.addEventListener('click', () => {{
+      for (const item of document.querySelectorAll('.paper-card:not([hidden]) details')) item.open = true;
+    }});
+    collapseAll.addEventListener('click', () => {{
+      for (const item of document.querySelectorAll('.paper-card details')) item.open = false;
+    }});
   </script>
 </body>
 </html>
@@ -354,8 +470,10 @@ def _append_markdown_section(lines: list[str], title: str, papers: list[RankedPa
         entry = paper.entry
         link = f" | [链接]({entry.url})" if entry.url else ""
         doi = f" | DOI: `{entry.doi}`" if entry.doi else ""
-        lines.append(f"### {index}. {paper.title_zh}")
-        lines.append(f"- 原题：{entry.title}{link}{doi}")
+        title_zh = _display_title_zh(paper)
+        lines.append(f"### {index}. {title_zh}")
+        lines.append(f"- 英文原题：{entry.title}{link}{doi}")
+        lines.append(f"- 期刊/来源：{entry.venue or '未识别'}")
         lines.append(f"- 相关性：{paper.relevance} / {paper.score:.2f}")
         if paper.matched_topics:
             lines.append(f"- 匹配主题：{'；'.join(paper.matched_topics)}")
@@ -374,10 +492,11 @@ def _append_markdown_section(lines: list[str], title: str, papers: list[RankedPa
 
 def _render_paper_card(paper: RankedPaper, index: int, output_dir: str | Path | None) -> str:
     entry = paper.entry
+    title_zh = _display_title_zh(paper)
     search_blob = " ".join(
         [
             entry.title,
-            paper.title_zh,
+            title_zh,
             paper.summary_zh,
             paper.reason_zh,
             entry.doi,
@@ -392,13 +511,15 @@ def _render_paper_card(paper: RankedPaper, index: int, output_dir: str | Path | 
         if entry.url
         else ""
     )
+    venue_html = escape(entry.venue or "未识别")
     doi_html = f'<span>DOI: <code>{escape(entry.doi)}</code></span>' if entry.doi else ""
     return f"""
       <article class="paper-card" data-level="{escape(paper.relevance)}" data-search="{escape(search_blob)}">
         <div class="paper-top">
           <div>
-            <h3>{index}. {escape(paper.title_zh)}</h3>
-            <p class="meta">原题：{escape(entry.title)}</p>
+            <h3>{index}. {escape(title_zh)}</h3>
+            <p class="meta">英文原题：{escape(entry.title)}</p>
+            <p class="venue">期刊/来源：{venue_html}</p>
           </div>
           <div class="score">{escape(_level_label(paper.relevance))} · {paper.score:.2f}</div>
         </div>
@@ -424,6 +545,18 @@ def _render_images(paths: list[Path | str], output_dir: str | Path | None) -> st
         src = _image_src(path, output_dir)
         items.append(f'<img src="{escape(src)}" alt="TOC 或邮件图片" loading="lazy">')
     return '<div class="image-grid">' + "".join(items) + "</div>"
+
+
+def _display_title_zh(paper: RankedPaper) -> str:
+    title = (paper.title_zh or "").strip()
+    original = paper.entry.title.strip()
+    if title and title != original and _contains_cjk(title):
+        return title
+    return "中文标题暂未生成"
+
+
+def _contains_cjk(text: str) -> bool:
+    return any("\u4e00" <= char <= "\u9fff" for char in text)
 
 
 def _image_src(path: Path | str, output_dir: str | Path | None) -> str:

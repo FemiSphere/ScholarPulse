@@ -105,7 +105,31 @@ def load_config(path: str | Path | None = None) -> dict[str, Any]:
     loaded = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
     if not isinstance(loaded, dict):
         raise ValueError(f"Config file must contain a mapping: {config_path}")
-    return deep_merge(config, loaded)
+    config = deep_merge(config, loaded)
+    return _load_external_llm_config(config, config_path.parent, yaml)
+
+
+def _load_external_llm_config(config: dict[str, Any], base_dir: Path, yaml_module: Any) -> dict[str, Any]:
+    config_path_value = config.get("llm", {}).get("config_path")
+    if not config_path_value:
+        return config
+
+    llm_config_path = Path(config_path_value)
+    if not llm_config_path.is_absolute():
+        llm_config_path = base_dir / llm_config_path
+    if not llm_config_path.exists():
+        raise FileNotFoundError(f"LLM config file not found: {llm_config_path}")
+
+    loaded = yaml_module.safe_load(llm_config_path.read_text(encoding="utf-8")) or {}
+    if not isinstance(loaded, dict):
+        raise ValueError(f"LLM config file must contain a mapping: {llm_config_path}")
+
+    provider_config = loaded.get("llm", loaded)
+    if not isinstance(provider_config, dict):
+        raise ValueError(f"LLM config file must contain a mapping: {llm_config_path}")
+    config["llm"] = deep_merge(config["llm"], provider_config)
+    config["llm"]["config_path"] = str(config_path_value)
+    return config
 
 
 def resolve_path(value: str | Path, base_dir: Path | None = None) -> Path:

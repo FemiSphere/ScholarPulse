@@ -1,4 +1,6 @@
 config.local.yaml
+config.local.yaml*
+config/llm/*.local.yaml
 credentials.json
 token.json
 Gmail_oauth*.md
@@ -10,5 +12,6 @@ logs/
 .pytest_cache/
 __pycache__/
 *.py[cod]
+*.swp
 .venv/
 venv/

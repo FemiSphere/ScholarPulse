@@ -42,7 +42,7 @@ class PaperEntry:
     source_email_id: str = ""
     source_subject: str = ""
     source_sender: str = ""
-    image_paths: list[Path] = field(default_factory=list)
+    image_paths: list[Path | str] = field(default_factory=list)
     raw_text: str = ""
 
 

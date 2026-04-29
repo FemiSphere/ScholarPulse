@@ -147,7 +147,9 @@ digest:
   output_formats:
     - "md"
     - "html"
+  overwrite_existing: false
   include_low_relevance: true
+  max_low_relevance: 80
 ```
 
 Gmail query 可以用 Gmail 搜索语法，例如：
@@ -254,6 +256,29 @@ extra_body:
 ```powershell
 Set-Location E:\Researching\My-literature-digest
 python -m literature_digest --dry-run --max-emails 50
+```
+
+## DeepSeek API 配置说明
+
+DeepSeek 的完整通俗说明见：[docs/deepseek-api-guide.md](docs/deepseek-api-guide.md)。
+
+当前项目的 LLM 配置已拆分：
+
+```yaml
+llm:
+  config_path: "config/llm/deepseek.local.yaml"
+```
+
+不同模型的详细参数放在独立文件中：
+
+- `config/llm/codex_cli.example.yaml`
+- `config/llm/deepseek.example.yaml`
+- `config/llm/deepseek.local.yaml`
+
+其中 `config/llm/*.local.yaml` 已加入 `.gitignore`。DeepSeek API key 不要写入 yaml，应写入 `.env`：
+
+```env
+DEEPSEEK_API_KEY=sk-你的真实key
 ```
 
 如果之后希望处理后自动标记已读，把 `config.local.yaml` 中的 `gmail.mark_as_read` 改为 `true`，并使用非 dry-run 运行。

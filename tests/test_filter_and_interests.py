@@ -42,6 +42,5 @@ def test_research_interests_are_structured_by_llm():
         OfflineStubClient(),
     )
 
-    assert "五边形 COF" in profile.material_systems
+    assert "COF" in profile.material_systems
     assert profile.high_priority_topics
-

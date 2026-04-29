@@ -68,6 +68,10 @@ class GmailClient:
         text_parts: list[str] = []
         image_paths: list[Path] = []
         cid_map: dict[str, Path] = {}
+        save_images = not _is_google_scholar_headers(
+            headers.get("from", ""),
+            headers.get("subject", ""),
+        )
         self._walk_parts(
             message_id=message_id,
             part=message.get("payload", {}),
@@ -75,6 +79,7 @@ class GmailClient:
             text_parts=text_parts,
             image_paths=image_paths,
             cid_map=cid_map,
+            save_images=save_images,
         )
         html = "\n".join(html_parts)
         for cid, path in cid_map.items():
@@ -141,6 +146,7 @@ class GmailClient:
         text_parts: list[str],
         image_paths: list[Path],
         cid_map: dict[str, Path],
+        save_images: bool,
     ) -> None:
         mime_type = part.get("mimeType", "")
         filename = part.get("filename", "")
@@ -159,6 +165,7 @@ class GmailClient:
                     text_parts=text_parts,
                     image_paths=image_paths,
                     cid_map=cid_map,
+                    save_images=save_images,
                 )
             return
 
@@ -166,7 +173,9 @@ class GmailClient:
             html_parts.append(_decode_body_data(body.get("data", "")))
         elif mime_type == "text/plain":
             text_parts.append(_decode_body_data(body.get("data", "")))
-        elif mime_type.startswith("image/") and self.parsing_config.get("save_toc_images", True):
+        elif save_images and mime_type.startswith("image/") and self.parsing_config.get("save_toc_images", True):
+            if not _is_likely_toc_image(filename, headers):
+                return
             if len(image_paths) >= int(self.parsing_config.get("max_images_per_email", 20)):
                 return
             data = self._read_part_bytes(message_id, body)
@@ -245,3 +254,34 @@ def _image_suffix(mime_type: str, filename: str) -> str:
         "image/webp": ".webp",
     }.get(mime_type.lower(), ".img")
 
+
+def _is_google_scholar_headers(sender: str, subject: str) -> bool:
+    searchable = f"{sender} {subject}".lower()
+    return (
+        "scholaralerts-noreply@google.com" in searchable
+        or "google scholar" in searchable
+        or "google 学术" in searchable
+        or "google 學術" in searchable
+    )
+
+
+def _is_likely_toc_image(filename: str, headers: dict[str, str]) -> bool:
+    searchable = " ".join([filename, headers.get("content-id", ""), headers.get("content-description", "")]).lower()
+    blocked = (
+        "logo",
+        "icon",
+        "social",
+        "twitter",
+        "facebook",
+        "linkedin",
+        "tracking",
+        "pixel",
+        "spacer",
+        "avatar",
+        "profile",
+    )
+    if any(token in searchable for token in blocked):
+        return False
+    if any(token in searchable for token in ("toc", "graphical", "abstract", "figure", "image", "ga", "scheme")):
+        return True
+    return not filename

@@ -4,6 +4,7 @@ import re
 from html import unescape
 from html.parser import HTMLParser
 from typing import Iterable
+from urllib.parse import parse_qs, urlsplit
 
 from .dedupe import DOI_RE, normalize_doi
 from .models import EmailMessage, PaperEntry
@@ -60,9 +61,18 @@ class _TextExtractor(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.parts: list[str] = []
+        self._ignored_depth = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag.lower() in {"style", "script", "noscript"}:
+            self._ignored_depth += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() in {"style", "script", "noscript"} and self._ignored_depth:
+            self._ignored_depth -= 1
 
     def handle_data(self, data: str) -> None:
-        if data.strip():
+        if not self._ignored_depth and data.strip():
             self.parts.append(data.strip())
 
 
@@ -100,7 +110,10 @@ def _parse_html_email(email: EmailMessage) -> list[PaperEntry]:
     extractor.feed(email.html)
     text = html_to_text(email.html)
     entries: list[PaperEntry] = []
-    image_refs = list(email.image_paths) + [src for src in extractor.images if _is_useful_image_src(src)]
+    google_scholar = _is_google_scholar_email(email)
+    image_refs = [] if google_scholar else _select_entry_images(
+        list(email.image_paths) + list(extractor.images)
+    )
 
     for href, link_text in extractor.links:
         title = normalize_space(link_text)
@@ -113,6 +126,7 @@ def _parse_html_email(email: EmailMessage) -> list[PaperEntry]:
                 url=_clean_url(href),
                 abstract=raw,
                 doi=normalize_doi(href + " " + raw),
+                venue=_extract_venue(raw, title),
                 source_email_id=email.id,
                 source_subject=email.subject,
                 source_sender=email.sender,
@@ -141,6 +155,7 @@ def _parse_text_email(email: EmailMessage) -> list[PaperEntry]:
                 url=_clean_url(url),
                 abstract=_snippet_around(text, title),
                 doi=normalize_doi(doi),
+                venue=_extract_venue(text, title),
                 source_email_id=email.id,
                 source_subject=email.subject,
                 source_sender=email.sender,
@@ -174,9 +189,16 @@ def _is_likely_title(text: str, href: str) -> bool:
         return False
     if any(token in lower for token in ("unsubscribe", "privacy policy", "manage alert", "view online")):
         return False
+    href_lower = href.lower()
+    if any(token in href_lower for token in ("scholar_alerts", "citations?", "view_op=cancel_alert")):
+        return False
+    if "scholar.google." in href_lower and "scholar_url" not in href_lower:
+        return False
+    if lower.startswith("[") and lower.endswith("]") and "scholar.google." in href_lower:
+        return False
     if lower.startswith(("http://", "https://", "doi:")):
         return False
-    if href.lower().startswith(("mailto:", "#")):
+    if href_lower.startswith(("mailto:", "#")):
         return False
     word_count = len(re.findall(r"[A-Za-z0-9\u4e00-\u9fff]+", normalized))
     return word_count >= 3
@@ -193,16 +215,89 @@ def _snippet_around(text: str, title: str, radius: int = 500) -> str:
 
 
 def _clean_url(url: str) -> str:
-    return unescape(url or "").rstrip(".,;)\"'")
+    cleaned = unescape(url or "").rstrip(".,;)\"'")
+    split = urlsplit(cleaned)
+    if split.netloc.endswith("scholar.google.com") and split.path.endswith("/scholar_url"):
+        target = parse_qs(split.query).get("url", [""])[0]
+        if target:
+            return target
+    return cleaned
+
+
+def _extract_venue(text: str, title: str) -> str:
+    compact = normalize_space(text)
+    title_index = compact.lower().find(title.lower())
+    if title_index != -1:
+        compact = compact[title_index + len(title) :]
+    window = compact[:500]
+    patterns = [
+        r"\s-\s(?P<venue>[^,。…]+(?:,\s*\d{4})?)",
+        r"\.\s*(?P<venue>[A-Z][A-Za-z&:\- ]+(?:,\s*\d{4}))",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, window)
+        if not match:
+            continue
+        venue = normalize_space(match.group("venue"))
+        venue = venue.strip(" .;:-")
+        if _is_valid_venue(venue):
+            return venue
+    return ""
+
+
+def _is_valid_venue(value: str) -> bool:
+    lower = value.lower()
+    if not value or len(value) > 120:
+        return False
+    if any(token in lower for token in ("google scholar", "this message", "cancel alert", "unsubscribe")):
+        return False
+    if not re.search(r"[A-Za-z]", value):
+        return False
+    return True
 
 
 def _is_useful_image_src(src: str) -> bool:
-    lower = src.lower().strip()
+    lower = str(src).lower().strip()
     if not lower:
         return False
-    if any(token in lower for token in ("spacer", "tracking", "pixel", "logo", "icon")):
+    blocked_tokens = (
+        "spacer",
+        "tracking",
+        "pixel",
+        "logo",
+        "icon",
+        "save-",
+        "tw-",
+        "twitter",
+        "facebook",
+        "linkedin",
+        "/intl/",
+        "/scholar/images/",
+        "share",
+        "social",
+        "avatar",
+        "profile",
+        "open_in_new",
+    )
+    if any(token in lower for token in blocked_tokens):
         return False
     return lower.startswith(("http://", "https://", "data/", "data:image", "./", "../")) or "." in lower
+
+
+def _select_entry_images(images: list[object]) -> list[object]:
+    useful = [image for image in images if _is_useful_image_src(str(image))]
+    return useful[:1]
+
+
+def _is_google_scholar_email(email: EmailMessage) -> bool:
+    searchable = " ".join([email.sender, email.subject, email.html[:2000], email.text[:1000]]).lower()
+    return (
+        "scholaralerts-noreply@google.com" in searchable
+        or "google scholar" in searchable
+        or "google 学术" in searchable
+        or "google 學術" in searchable
+        or "scholar.google." in searchable
+    )
 
 
 def _dedupe_within_email(entries: list[PaperEntry]) -> list[PaperEntry]:

@@ -7,7 +7,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
-from .base import LLMError, extract_json_object
+from .base import LLMError, extract_json_object, redact_secrets
 
 
 @dataclass(slots=True)
@@ -23,6 +23,12 @@ class OpenAICompatibleClient:
     extra_body: dict[str, Any] | None = None
 
     def complete(self, prompt: str) -> str:
+        if self.api_key_env.strip().lower().startswith("sk-"):
+            raise LLMError(
+                "openai_compatible.api_key_env looks like an API key. "
+                "Set it to an environment variable name such as DEEPSEEK_API_KEY, "
+                "and put the real key in .env."
+            )
         api_key = os.environ.get(self.api_key_env)
         if not api_key:
             raise LLMError(f"Missing API key environment variable: {self.api_key_env}")
@@ -61,7 +67,9 @@ class OpenAICompatibleClient:
                 payload = json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
             body_text = exc.read().decode("utf-8", errors="replace")
-            raise LLMError(f"OpenAI-compatible API failed: HTTP {exc.code}: {body_text}") from exc
+            raise LLMError(
+                f"OpenAI-compatible API failed: HTTP {exc.code}: {redact_secrets(body_text)}"
+            ) from exc
         except OSError as exc:
             raise LLMError(f"OpenAI-compatible API request failed: {exc}") from exc
 

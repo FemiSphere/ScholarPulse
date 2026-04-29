@@ -127,6 +127,7 @@ def main(argv: list[str] | None = None) -> int:
         run,
         _resolve_path(config["digest"]["output_dir"], base_dir),
         formats=list(config["digest"].get("output_formats", ["md", "html"])),
+        overwrite_existing=bool(config["digest"].get("overwrite_existing", True)),
     )
 
     if not dry_run and not sample_mode and config["gmail"].get("mark_as_read", False):
@@ -195,7 +196,9 @@ def _should_use_sample(
 def _apply_digest_limits(ranked, config: dict[str, Any]):
     high_limit = int(config["digest"].get("max_high_relevance", 20))
     medium_limit = int(config["digest"].get("max_medium_relevance", 30))
-    high_count = medium_count = 0
+    raw_low_limit = config["digest"].get("max_low_relevance")
+    low_limit = None if raw_low_limit is None else int(raw_low_limit)
+    high_count = medium_count = low_count = 0
     result = []
     for paper in ranked:
         if paper.relevance == "high":
@@ -206,6 +209,10 @@ def _apply_digest_limits(ranked, config: dict[str, Any]):
             if medium_count >= medium_limit:
                 continue
             medium_count += 1
+        elif paper.relevance == "low":
+            if low_limit is not None and low_count >= low_limit:
+                continue
+            low_count += 1
         result.append(paper)
     return result
 
@@ -254,4 +261,3 @@ def _shorten(value: str, max_length: int) -> str:
     if len(text) <= max_length:
         return text
     return text[: max_length - 3].rstrip() + "..."
-

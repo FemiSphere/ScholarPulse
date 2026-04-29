@@ -16,19 +16,22 @@ class OfflineStubClient:
         if "INTEREST_PROFILE_JSON" in prompt:
             return json.dumps(
                 {
-                    "current_projects": ["五边形 COF 纳米管热导率研究"],
-                    "material_systems": ["五边形 COF", "框架材料", "纳米管"],
-                    "methods": ["机器学习势函数", "计算材料科学"],
-                    "properties": ["热导率", "声子", "热输运"],
-                    "high_priority_topics": [
-                        "五边形框架材料",
-                        "机器学习势函数",
-                        "纳米管热导率",
-                        "热输运",
+                    "current_projects": [
+                        "computational materials science",
+                        "AI for materials",
                     ],
-                    "medium_priority_topics": ["AI for materials", "COF/MOF", "phonons"],
-                    "deprioritized_topics": ["纯促销信息", "非学术营销"],
-                    "summary_zh": "近期重点关注五边形 COF 纳米管、热导率与机器学习势函数交叉方向。",
+                    "material_systems": ["COF", "MOF", "pentagonal materials"],
+                    "methods": ["machine-learning interatomic potentials", "phonons", "thermal transport"],
+                    "properties": ["thermal conductivity", "phonon transport"],
+                    "high_priority_topics": [
+                        "pentagonal materials",
+                        "COF/MOF",
+                        "machine-learning interatomic potentials",
+                        "thermal transport",
+                    ],
+                    "medium_priority_topics": ["AI for materials", "materials informatics"],
+                    "deprioritized_topics": ["unrelated organic synthesis"],
+                    "summary_zh": "当前研究聚焦于计算材料科学、AI for materials、COF/MOF、五边形材料、机器学习原子间势以及热输运。",
                 },
                 ensure_ascii=False,
             )
@@ -36,9 +39,9 @@ class OfflineStubClient:
             papers = _extract_papers(prompt)
             ranked = []
             for item in papers:
-                text = (item.get("title", "") + " " + item.get("abstract", "")).lower()
+                text = f"{item.get('title', '')} {item.get('abstract', '')}".lower()
                 score = 0.25
-                if any(term in text for term in ["pentagonal", "penta", "cof", "nanotube"]):
+                if any(term in text for term in ["pentagonal", "penta", "cof", "mof"]):
                     score += 0.35
                 if any(term in text for term in ["thermal", "phonon", "conductivity"]):
                     score += 0.25
@@ -50,10 +53,10 @@ class OfflineStubClient:
                         "index": item["index"],
                         "relevance": relevance,
                         "score": round(min(score, 1.0), 2),
-                        "title_zh": f"中文标题：{item.get('title', '')}",
-                        "summary_zh": "基于邮件信息生成的离线样例摘要；真实运行时请使用 Codex CLI 或外置 API。",
-                        "reason_zh": "与当前研究兴趣的匹配度由样例规则估计。",
-                        "matched_topics": ["热导率", "机器学习势函数"] if relevance != "low" else [],
+                        "title_zh": f"论文：{item.get('title', '')}",
+                        "summary_zh": "这是本地离线 stub 生成的中文摘要，用于测试和 dry-run。",
+                        "reason_zh": "这是本地离线 stub 生成的中文推荐理由，用于测试和 dry-run。",
+                        "matched_topics": ["pentagonal materials", "COF/MOF"] if relevance != "low" else [],
                     }
                 )
             return json.dumps({"papers": ranked}, ensure_ascii=False)
@@ -77,4 +80,3 @@ def _extract_papers(prompt: str) -> list[dict[str, Any]]:
     except json.JSONDecodeError:
         return []
     return data if isinstance(data, list) else []
-

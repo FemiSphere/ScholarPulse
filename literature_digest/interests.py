@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .llm import LLMClient
+from .llm import LLMClient, LLMError
 from .models import InterestProfile
 
 
@@ -20,31 +20,41 @@ def analyze_research_interests(text: str, llm: LLMClient) -> InterestProfile:
     prompt = f"""
 INTEREST_PROFILE_JSON
 
-你将读取一段研究兴趣说明。请只输出一个 JSON 对象，不要输出 Markdown。
-字段必须包含：
-- current_projects: string[]
-- material_systems: string[]
-- methods: string[]
-- properties: string[]
-- high_priority_topics: string[]
-- medium_priority_topics: string[]
-- deprioritized_topics: string[]
-- summary_zh: string
+Read the research-interest note below and return STRICT JSON only.
 
-要求：
-1. 只根据用户文本提炼，不要使用固定模板关键词替代用户意图。
-2. high_priority_topics 应体现近期最该优先推荐的交叉主题。
-3. deprioritized_topics 可为空数组。
+Schema:
+{{
+  "current_projects": ["..."],
+  "material_systems": ["..."],
+  "methods": ["..."],
+  "properties": ["..."],
+  "high_priority_topics": ["..."],
+  "medium_priority_topics": ["..."],
+  "deprioritized_topics": ["..."],
+  "summary_zh": "..."
+}}
 
-研究兴趣文本：
+Rules:
+- Return only a single JSON object. No markdown fences, no commentary.
+- Keep values concise and specific.
+- `summary_zh` should be a short Chinese summary of the research interests.
+- Put the strongest matching topics into `high_priority_topics`.
+- Put related but weaker topics into `medium_priority_topics`.
+- Put clearly out-of-scope topics into `deprioritized_topics`.
+- If the note is brief or ambiguous, infer a compact profile that is still useful for ranking.
+
+Research-interest note:
 {text}
 """.strip()
-    payload = llm.complete_json(prompt)
+    try:
+        payload = llm.complete_json(prompt)
+    except LLMError:
+        return fallback_interest_profile(text)
     return profile_from_payload(payload)
 
 
 def fallback_interest_profile(text: str) -> InterestProfile:
-    """Create a lightweight profile without calling an LLM for empty digest runs."""
+    """Create a lightweight profile without calling an LLM."""
 
     summary = re.sub(r"\s+", " ", text).strip()
     if len(summary) > 220:
@@ -52,13 +62,24 @@ def fallback_interest_profile(text: str) -> InterestProfile:
     topics = _extract_topic_phrases(text)
     payload = {
         "current_projects": [summary] if summary else [],
-        "material_systems": [],
-        "methods": [],
-        "properties": [],
+        "material_systems": _terms_present(
+            text,
+            [
+                "COF",
+                "MOF",
+                "HOF",
+                "pentagonal",
+                "pentagon",
+                "framework",
+                "porous",
+            ],
+        ),
+        "methods": _terms_present(text, ["machine learning", "MLIP", "neural network", "phonon"]),
+        "properties": _terms_present(text, ["thermal conductivity", "phonon", "heat transport", "diffusivity"]),
         "high_priority_topics": topics,
         "medium_priority_topics": [],
         "deprioritized_topics": [],
-        "summary_zh": summary or "未填写近期研究兴趣。",
+        "summary_zh": summary or "研究兴趣摘要为空，使用默认回退配置。",
     }
     return profile_from_payload(payload)
 
@@ -78,23 +99,37 @@ def profile_from_payload(payload: dict[str, Any]) -> InterestProfile:
 
 
 def profile_to_json(profile: InterestProfile) -> str:
-    return json.dumps(profile.raw or {
-        "current_projects": profile.current_projects,
-        "material_systems": profile.material_systems,
-        "methods": profile.methods,
-        "properties": profile.properties,
-        "high_priority_topics": profile.high_priority_topics,
-        "medium_priority_topics": profile.medium_priority_topics,
-        "deprioritized_topics": profile.deprioritized_topics,
-        "summary_zh": profile.summary_zh,
-    }, ensure_ascii=False, indent=2)
+    return json.dumps(
+        profile.raw
+        or {
+            "current_projects": profile.current_projects,
+            "material_systems": profile.material_systems,
+            "methods": profile.methods,
+            "properties": profile.properties,
+            "high_priority_topics": profile.high_priority_topics,
+            "medium_priority_topics": profile.medium_priority_topics,
+            "deprioritized_topics": profile.deprioritized_topics,
+            "summary_zh": profile.summary_zh,
+        },
+        ensure_ascii=False,
+        indent=2,
+    )
 
 
 def _extract_topic_phrases(text: str) -> list[str]:
     normalized = re.sub(r"\s+", " ", text)
-    parts = re.split(r"[，,。；;\n]", normalized)
-    topics = [part.strip(" ：:") for part in parts if 4 <= len(part.strip()) <= 40]
+    parts = re.split(r"[;,\n/\\]+", normalized)
+    topics = [part.strip(" .:") for part in parts if 4 <= len(part.strip()) <= 60]
     return topics[:8]
+
+
+def _terms_present(text: str, terms: list[str]) -> list[str]:
+    lower_text = text.lower()
+    result: list[str] = []
+    for term in terms:
+        if term.lower() in lower_text:
+            result.append(term)
+    return result
 
 
 def _string_list(value: Any) -> list[str]:
@@ -103,4 +138,3 @@ def _string_list(value: Any) -> list[str]:
     if isinstance(value, str) and value.strip():
         return [value.strip()]
     return []
-

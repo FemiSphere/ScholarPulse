@@ -17,6 +17,16 @@ class LLMClient(Protocol):
         ...
 
 
+def redact_secrets(text: str) -> str:
+    redacted = re.sub(r"sk-[A-Za-z0-9_-]{8,}", "sk-***REDACTED***", text)
+    redacted = re.sub(
+        r"(?i)(api[_-]?key[\"'\s:=]+)[A-Za-z0-9_\-\.]{12,}",
+        r"\1***REDACTED***",
+        redacted,
+    )
+    return redacted
+
+
 def extract_json_object(text: str) -> dict[str, Any]:
     stripped = text.strip()
     try:
@@ -35,4 +45,3 @@ def extract_json_object(text: str) -> dict[str, Any]:
     if start >= 0 and end > start:
         return json.loads(text[start : end + 1])
     raise LLMError("LLM response did not contain a JSON object.")
-

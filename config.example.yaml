@@ -1,18 +1,18 @@
-# 科研文献摘要配置参考
+# 科研文献摘要主配置模板
 #
-# 使用方式：
-# 1. 复制本文件为 config.local.yaml
-# 2. 只在 config.local.yaml 中填写本地真实配置
-# 3. 不要把 config.local.yaml、credentials.json、token.json、.env 提交到 git
+# 使用方法：
+# 1. 复制本文件为 config.local.yaml。
+# 2. 只在 config.local.yaml 中修改本地真实配置。
+# 3. 不要提交 config.local.yaml、credentials.json、token.json、.env、data/、outputs/。
 
 gmail:
   # Gmail 搜索语法。默认读取所有未读邮件。
   query: "is:unread"
 
-  # 单次最多读取多少封邮件。第一次真实运行建议先设为 5-20。
+  # 单次最多读取多少封邮件。积压很多时建议先 30-50 封分批处理。
   max_emails_per_run: 50
 
-  # 是否在成功处理后把邮件标记为已读。默认关闭，避免误操作。
+  # 是否在成功处理后把邮件标记为已读。测试阶段建议 false。
   mark_as_read: false
 
   # 是否包含 Gmail spam/trash。通常保持 false。
@@ -25,43 +25,10 @@ gmail:
   token_path: "token.json"
 
 llm:
-  # 可选值：
-  #   codex_cli          默认：通过本机 Codex CLI 调用模型
-  #   openai_compatible  DeepSeek、OpenAI-compatible 网关或其他兼容服务
-  #   offline_stub       仅用于测试，不建议日常使用
-  provider: "codex_cli"
-
-  # Codex CLI 默认模型。这个任务通常不需要最高智能等级。
-  model: "gpt-5.4-mini"
-
-  # Codex 推理强度。常用：low / medium / high。
-  reasoning_effort: "low"
-
-  # 单次 LLM 调用超时秒数。
-  timeout_seconds: 120
-
-  # 限制输出 token，控制成本和防止异常长输出。
-  max_output_tokens: 4000
-
-  codex_cli:
-    # 如果 codex 不在 PATH 中，可改为 codex.cmd 或 codex.exe 的完整路径。
-    executable: "codex"
-
-    # true 表示使用 `codex exec --ephemeral`，避免每次摘要的中间会话持久化到 Codex 项目/会话列表。
-    ephemeral: true
-
-    # 额外传给 Codex CLI 的参数，通常留空。
-    extra_args: []
-
-  openai_compatible:
-    # DeepSeek 官方 OpenAI 兼容 base_url: https://api.deepseek.com
-    base_url: ""
-    api_key_env: "OPENAI_API_KEY"
-    model: ""
-    temperature: 0.2
-    reasoning_effort: ""
-    response_format_json: true
-    extra_body: {}
+  # 主配置只选择一个 LLM 配置文件。
+  # 默认使用 Codex CLI；如需切换 DeepSeek，请改为：
+  # config_path: "config/llm/deepseek.local.yaml"
+  config_path: "config/llm/codex_cli.example.yaml"
 
 research_interests:
   # 用自然语言维护近期研究兴趣。排序优先级默认来自这个文档。
@@ -93,10 +60,13 @@ digest:
   output_formats:
     - "md"
     - "html"
+  # false 时，同一天多次运行不会覆盖已有 digest，而是自动追加 -2、-3。
+  overwrite_existing: false
   include_low_relevance: true
   language: "zh-CN"
   max_high_relevance: 20
   max_medium_relevance: 30
+  max_low_relevance: 80
 
 safety:
   dry_run_default: true
@@ -106,8 +76,5 @@ safety:
   allow_offline_llm_for_sample: true
 
 progress:
-  # 是否在命令行显示当前阶段、邮件过滤进度、LLM 批次进度和总耗时。
   enabled: true
-
-  # 是否在进度消息前显示当前时间。
   show_timestamps: true
