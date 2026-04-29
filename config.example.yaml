@@ -54,6 +54,8 @@ parsing:
   toc_image_dir: "data/toc_images"
   max_images_per_email: 20
   fuzzy_title_threshold: 92
+  # 非 Google Scholar 的出版社/期刊/RSS 邮件，先用快速 LLM 抽取结构化论文条目。
+  llm_structure_non_scholar: true
 
 digest:
   output_dir: "outputs"

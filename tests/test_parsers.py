@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from literature_digest.models import EmailMessage
-from literature_digest.parsers import parse_email
+from literature_digest.llm.base import extract_json_object
+from literature_digest.parsers import parse_email, parse_emails
 
 
 def test_google_scholar_alert_extracts_multiple_papers():
@@ -129,3 +130,63 @@ def test_text_email_extracts_doi_url_and_title_candidate():
     assert len(entries) >= 1
     assert entries[0].doi == "10.5678/rss.2026.42"
     assert entries[0].url == "https://example.org/rss-paper"
+
+
+class StructuredEmailClient:
+    def complete(self, prompt: str) -> str:
+        assert "EMAIL_PAPER_EXTRACTION_JSON" in prompt
+        assert "Visit our Email Preference Center" in prompt
+        return """
+        {
+          "papers": [
+            {
+              "title": "Anisotropic Thermal Conductivity Enhancement of the Aligned Metal-Organic Framework under Water Vapor Adsorption",
+              "url": "https://pubs.acs.org/doi/10.1021/acs.jpclett.4c01244",
+              "doi": "10.1021/acs.jpclett.4c01244",
+              "venue": "The Journal of Physical Chemistry Letters",
+              "authors": "Shingi Yamaguchi, Junichiro Shiomi, et al.",
+              "snippet": "Publication Date (Web): June 18, 2024",
+              "image_index": 0
+            }
+          ]
+        }
+        """
+
+    def complete_json(self, prompt: str):
+        return extract_json_object(self.complete(prompt))
+
+
+def test_non_scholar_email_can_use_llm_structuring_and_skip_footer_links():
+    email = EmailMessage(
+        id="acs",
+        thread_id="t",
+        subject="Recommended Reading from ACS Publications",
+        sender="ACS Recommended Reading <updates@acspubs.org>",
+        date=None,
+        html="""
+        <html><body>
+          <p>The Journal of Physical Chemistry Letters</p>
+          <img src="https://app.acspubs.org/e/FooterImages/FooterImage1?x=1">
+          <img src="https://pubs.acs.org/cms/10.1021/acs.jpclett.4c01244/asset/images/medium/jz4c01244_0005.gif">
+          <a href="https://pubs.acs.org/doi/10.1021/acs.jpclett.4c01244">
+            Anisotropic Thermal Conductivity Enhancement of the Aligned Metal-Organic Framework under Water Vapor Adsorption
+          </a>
+          <a href="https://pubs.acs.org/doi/10.1021/acs.jpclett.4c01244">DOI: 10.1021/acs.jpclett.4c01244</a>
+          <a href="https://preferences.acs.org/">Visit our Email Preference Center</a>
+          <a href="https://preferences.acs.org/unsubscribe/all">Stop all emails from ACS Publications</a>
+        </body></html>
+        """,
+    )
+
+    entries = parse_emails(
+        [email],
+        llm=StructuredEmailClient(),
+        llm_structure_non_scholar=True,
+    )
+
+    assert len(entries) == 1
+    assert entries[0].venue == "The Journal of Physical Chemistry Letters"
+    assert entries[0].doi == "10.1021/acs.jpclett.4c01244"
+    assert entries[0].image_paths == [
+        "https://pubs.acs.org/cms/10.1021/acs.jpclett.4c01244/asset/images/medium/jz4c01244_0005.gif"
+    ]

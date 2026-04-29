@@ -70,7 +70,11 @@ def main(argv: list[str] | None = None) -> int:
     progress.step(f"邮件过滤完成：保留 {len(accepted)} 封，跳过 {len(skipped)} 封")
 
     progress.step("解析论文条目")
-    entries = parse_emails(accepted)
+    entries = parse_emails(
+        accepted,
+        llm=llm,
+        llm_structure_non_scholar=bool(config["parsing"].get("llm_structure_non_scholar", True)),
+    )
     progress.step(f"解析完成：{len(entries)} 个候选条目")
 
     progress.step("执行 DOI、URL、标题和模糊标题去重")

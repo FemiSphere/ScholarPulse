@@ -55,6 +55,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "toc_image_dir": "data/toc_images",
         "max_images_per_email": 20,
         "fuzzy_title_threshold": 92,
+        "llm_structure_non_scholar": True,
     },
     "digest": {
         "output_dir": "outputs",
