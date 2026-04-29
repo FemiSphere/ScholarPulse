@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable
 from typing import Any
 
@@ -54,6 +55,7 @@ RANK_PAPERS_JSON
 You are ranking paper entries for a Chinese literature digest.
 
 Return exactly one valid JSON object. Do not wrap it in Markdown or add explanations.
+The first character must be `{{` and the last character must be `}}`.
 
 Schema:
 {{
@@ -83,6 +85,11 @@ Rules:
 - Do not invent details that are not present in the title, venue, snippet, DOI, or URL.
 - For high/medium relevance, write a cautious Chinese note based on available metadata.
 - For low relevance, keep the note short and focus on why it is weakly related.
+- If an alert gives only a short or incomplete snippet, still translate the title and rank from the title,
+  venue/source, DOI, URL, and any visible snippet.
+- Do not default everything to low relevance. If a paper directly mentions materials, methods,
+  or properties in the high-priority profile, use at least medium relevance unless the context is clearly unrelated.
+- Return one item for every input paper, using the original `index` exactly once.
 
 Research interest profile:
 {profile_to_json(profile)}
@@ -93,7 +100,7 @@ PAPERS_JSON:
     try:
         payload = llm.complete_json(prompt)
     except LLMError as exc:
-        return _fallback_ranked_batch(entries, exc)
+        return _fallback_ranked_batch(entries, profile, exc)
 
     by_index = _payload_by_index(payload)
     result: list[RankedPaper] = []
@@ -141,22 +148,124 @@ def _ranked_from_payload(entry: PaperEntry, payload: dict[str, Any]) -> RankedPa
     )
 
 
-def _fallback_ranked_batch(entries: list[PaperEntry], error: Exception) -> list[RankedPaper]:
+def _fallback_ranked_batch(
+    entries: list[PaperEntry],
+    profile: InterestProfile,
+    error: Exception,
+) -> list[RankedPaper]:
     reason = redact_secrets(str(error).strip())
     if len(reason) > 240:
         reason = reason[:240] + "..."
     return [
-        RankedPaper(
-            entry=entry,
-            relevance="low",
-            score=0.0,
-            title_zh=_fallback_title_translation(entry.title),
-            summary_zh="LLM 解析失败，已回退到本地规则摘要。",
-            reason_zh=f"LLM 解析失败，已回退到本地规则判断：{reason}" if reason else "LLM 解析失败，已回退到本地规则判断。",
-            matched_topics=[],
-        )
+        _fallback_ranked_paper(entry, profile, reason)
         for entry in entries
     ]
+
+
+def _fallback_ranked_paper(entry: PaperEntry, profile: InterestProfile, error_reason: str) -> RankedPaper:
+    score, matched_topics = _heuristic_score(entry, profile)
+    relevance: RelevanceLevel = "high" if score >= 0.7 else "medium" if score >= 0.28 else "low"
+    topic_note = "、".join(matched_topics[:6]) if matched_topics else "未命中明显高优先级主题"
+    reason = f"LLM JSON 解析失败，已用本地规则按标题、期刊/来源和片段保守判断；命中：{topic_note}。"
+    if error_reason:
+        reason += f" 错误摘要：{error_reason}"
+    return RankedPaper(
+        entry=entry,
+        relevance=relevance,
+        score=score,
+        title_zh=_fallback_title_translation(entry.title),
+        summary_zh="LLM 未返回可解析的结构化结果；此处为本地规则生成的占位摘要，请优先查看英文原题、期刊/来源和原文链接。",
+        reason_zh=reason,
+        matched_topics=matched_topics,
+    )
+
+
+def _heuristic_score(entry: PaperEntry, profile: InterestProfile) -> tuple[float, list[str]]:
+    text = _normalize_text(
+        " ".join(
+            [
+                entry.title,
+                entry.abstract,
+                entry.venue,
+                entry.raw_text[:700],
+                entry.source_subject,
+            ]
+        )
+    )
+    score = 0.0
+    matched: list[str] = []
+
+    weighted_patterns: list[tuple[str, float, tuple[str, ...]]] = [
+        ("thermal conductivity", 0.30, ("thermal conductivity", "heat conductivity", "热导率")),
+        ("thermal transport", 0.25, ("thermal transport", "heat transport", "热输运", "热传输")),
+        ("phonons", 0.18, ("phonon", "phonons", "声子")),
+        ("machine-learning potentials", 0.28, ("machine learning potential", "machine-learning potential", "interatomic potential", "neural network potential", "mlip", "nep", "势函数")),
+        ("COF", 0.26, ("cof", "covalent organic framework", "covalent organic frameworks", "共价有机框架")),
+        ("MOF", 0.22, ("mof", "metal-organic framework", "metal organic framework", "metal-organic frameworks", "金属有机框架")),
+        ("pentagonal materials", 0.30, ("pentagonal", "penta-", "penta ", "五边形", "五边")),
+        ("nanotubes", 0.20, ("nanotube", "nanotubes", "纳米管")),
+        ("framework materials", 0.10, ("framework", "porous", "多孔", "框架材料")),
+        ("computational materials", 0.10, ("molecular dynamics", "first-principles", "density functional", "dft", "simulation", "计算材料")),
+        ("AI for materials", 0.10, ("machine learning", "deep learning", "neural network", "artificial intelligence", "materials informatics")),
+    ]
+    for label, weight, patterns in weighted_patterns:
+        if any(_normalize_text(pattern) in text for pattern in patterns):
+            score += weight
+            matched.append(label)
+
+    for topic in _profile_terms(profile):
+        topic_tokens = _important_tokens(topic)
+        if not topic_tokens:
+            continue
+        hits = [token for token in topic_tokens if token in text]
+        if not hits:
+            continue
+        score += min(0.18, 0.05 * len(hits))
+        matched.append(topic)
+
+    deprioritized_hits = [
+        topic
+        for topic in _profile_terms(profile, deprioritized=True)
+        if _normalize_text(topic) and _normalize_text(topic) in text
+    ]
+    if deprioritized_hits:
+        score -= 0.25
+        matched.extend([f"降权：{topic}" for topic in deprioritized_hits[:2]])
+
+    score = max(0.0, min(score, 1.0))
+    return round(score, 2), _dedupe_preserve_order(matched)
+
+
+def _profile_terms(profile: InterestProfile, *, deprioritized: bool = False) -> list[str]:
+    if deprioritized:
+        return profile.deprioritized_topics
+    return (
+        profile.high_priority_topics
+        + profile.material_systems
+        + profile.methods
+        + profile.properties
+        + profile.current_projects
+        + profile.medium_priority_topics
+    )
+
+
+def _important_tokens(topic: str) -> list[str]:
+    normalized = _normalize_text(topic)
+    tokens = re.findall(r"[a-z0-9][a-z0-9+\-.]{1,}|[\u4e00-\u9fff]{2,}", normalized)
+    stopwords = {"and", "for", "with", "the", "from", "based", "materials", "science", "research", "current"}
+    return [token for token in tokens if token not in stopwords]
+
+
+def _dedupe_preserve_order(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        key = value.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(value)
+    return result
 
 
 def count_relevance(papers: list[RankedPaper], level: RelevanceLevel) -> int:
@@ -209,6 +318,14 @@ def _fallback_title_translation(title: str) -> str:
         ("metal-modulated", "金属调制"),
         ("doping effects", "掺杂效应"),
         ("effects on", "对……的影响"),
+        ("anisotropic", "各向异性"),
+        ("enhancement", "增强"),
+        ("aligned", "取向排列的"),
+        ("two-dimensional", "二维"),
+        ("electronic properties", "电子性质"),
+        ("structural defects", "结构缺陷"),
+        ("band degeneracy", "能带简并"),
+        ("orbital engineering", "轨道工程"),
         ("in ", "在"),
         ("of ", "的"),
     ]
@@ -217,10 +334,12 @@ def _fallback_title_translation(title: str) -> str:
         translated = _replace_case_insensitive(translated, source, target)
     if any("\u4e00" <= char <= "\u9fff" for char in translated):
         return translated
-    return title
+    return f"待翻译：{title}"
 
 
 def _replace_case_insensitive(text: str, source: str, target: str) -> str:
-    import re
-
     return re.sub(re.escape(source), target, text, flags=re.IGNORECASE)
+
+
+def _normalize_text(text: str) -> str:
+    return re.sub(r"\s+", " ", text.casefold()).strip()

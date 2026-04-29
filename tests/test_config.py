@@ -57,3 +57,28 @@ def test_openai_compatible_rejects_api_key_as_env_name():
 
     assert "looks like an API key" in message
     assert "sk-testsecret" not in message
+
+
+class RetryJSONClient(OpenAICompatibleClient):
+    def __init__(self):
+        super().__init__(
+            base_url="https://api.deepseek.com",
+            api_key_env="DEEPSEEK_API_KEY",
+            model="deepseek-v4-flash",
+        )
+        self.calls = 0
+
+    def complete(self, prompt: str) -> str:
+        self.calls += 1
+        if self.calls == 1:
+            return "not json"
+        return '{"ok": true}'
+
+
+def test_openai_compatible_complete_json_retries_non_json_response():
+    client = RetryJSONClient()
+
+    payload = client.complete_json("Return JSON.")
+
+    assert payload == {"ok": True}
+    assert client.calls == 2

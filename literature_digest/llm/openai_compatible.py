@@ -79,4 +79,31 @@ class OpenAICompatibleClient:
             raise LLMError("OpenAI-compatible API response did not contain message content.") from exc
 
     def complete_json(self, prompt: str) -> dict[str, Any]:
-        return extract_json_object(self.complete(prompt))
+        first_response = self.complete(prompt)
+        try:
+            return extract_json_object(first_response)
+        except LLMError:
+            retry_prompt = f"""
+{prompt}
+
+Your previous response could not be parsed as JSON.
+Return ONLY one valid JSON object that follows the requested schema.
+Do not include Markdown fences, explanations, reasoning text, status text, or any text before or after the JSON object.
+The first character must be `{{` and the last character must be `}}`.
+""".strip()
+            second_response = self.complete(retry_prompt)
+            try:
+                return extract_json_object(second_response)
+            except LLMError as exc:
+                preview = _shorten_for_error(second_response or first_response)
+                raise LLMError(
+                    "OpenAI-compatible API response did not contain a parseable JSON object after retry. "
+                    f"Response preview: {preview}"
+                ) from exc
+
+
+def _shorten_for_error(text: str, limit: int = 800) -> str:
+    compact = " ".join(redact_secrets(text).split())
+    if len(compact) <= limit:
+        return compact
+    return compact[:limit] + "..."
