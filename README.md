@@ -14,7 +14,7 @@ ScholarPulse 是一个轻量级本地 Python 工作流，用来从 Google Schola
 - 同时输出 Markdown 与 HTML；HTML 支持浏览器阅读、图片展示、搜索和相关性筛选。
 - 默认 dry-run，不删除邮件，不标记已读，适合先安全试跑。
 
-👉 [点击此处查看渲染后的 HTML 效果](https://htmlpreview.github.io/?https://github.com/FemiSphere/ScholarPulse/blob/master/2026-04-30-digest.html)
+👉 [点击此处查看真实案例：输出的 HTML （建议右键新窗口打开查看） ](https://htmlpreview.github.io/?https://github.com/FemiSphere/ScholarPulse/blob/master/2026-04-30-digest.html)
 
 ## 快速开始
 
