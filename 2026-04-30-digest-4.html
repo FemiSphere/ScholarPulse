@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>科研文献摘要 - 2026-04-30</title>
+  <style>
+    :root {
+      --bg: #f4f7f6;
+      --surface: #fbfcfa;
+      --surface-strong: #ffffff;
+      --text: #17201c;
+      --muted: #64716b;
+      --border: #dce4df;
+      --accent: #13756d;
+      --accent-strong: #0a4a45;
+      --accent-soft: #e3f2ee;
+      --amber: #b7791f;
+      --rose: #b04436;
+      --slate: #607083;
+      --high: #b04436;
+      --medium: #b7791f;
+      --low: #607083;
+      --shadow: 0 18px 50px rgba(23, 32, 28, 0.10);
+      --shadow-soft: 0 8px 24px rgba(23, 32, 28, 0.07);
+      color-scheme: light;
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(19, 117, 109, 0.08) 0%, rgba(244, 247, 246, 0) 380px),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    header {
+      padding: 42px 28px 28px;
+      border-bottom: 1px solid rgba(220, 228, 223, 0.82);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(19, 117, 109, 0.16), transparent 34%),
+        linear-gradient(135deg, #ffffff 0%, #f5faf8 54%, #eef3f0 100%);
+    }
+    .shell { width: min(1180px, calc(100vw - 32px)); margin: 0 auto; }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 28px;
+    }
+    h1 { margin: 0 0 10px; font-size: 38px; line-height: 1.15; font-weight: 760; letter-spacing: 0; }
+    .subtitle { margin: 0; color: var(--muted); font-size: 15px; }
+    .hero-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(76px, 1fr));
+      gap: 8px;
+      min-width: 290px;
+    }
+    .hero-summary div {
+      border: 1px solid rgba(19, 117, 109, 0.18);
+      background: rgba(255, 255, 255, 0.76);
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: var(--shadow-soft);
+    }
+    .hero-summary strong { display: block; font-size: 22px; line-height: 1.1; }
+    .hero-summary span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(244, 247, 246, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0;
+    }
+    .toolbar-row { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; }
+    input[type="search"] {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 15px;
+      background: var(--surface-strong);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+    input[type="search"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12); }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-strong);
+      color: var(--text);
+      min-height: 40px;
+      padding: 0 13px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: border-color 140ms ease, background 140ms ease, color 140ms ease, transform 140ms ease;
+    }
+    button:hover { transform: translateY(-1px); border-color: rgba(19, 117, 109, 0.38); }
+    button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
+    .secondary-actions button {
+      color: var(--accent-strong);
+      background: #f8fbfa;
+    }
+    main { padding: 28px 0 56px; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(110px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat {
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      min-height: 74px;
+      box-shadow: var(--shadow-soft);
+    }
+    .stat strong { display: block; font-size: 25px; line-height: 1.1; color: var(--accent-strong); }
+    .stat span { color: var(--muted); font-size: 13px; }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-soft);
+    }
+    .panel h2, .section-title { margin: 0 0 12px; font-size: 20px; line-height: 1.3; }
+    .topics { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .topics span, .tag {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .paper-list { display: grid; gap: 18px; }
+    .paper-card {
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+      border-left: 5px solid var(--low);
+      border-radius: 8px;
+      padding: 20px 20px 18px;
+      box-shadow: var(--shadow-soft);
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+    .paper-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: rgba(19, 117, 109, 0.24); }
+    .paper-card[data-level="high"] { border-left-color: var(--high); }
+    .paper-card[data-level="medium"] { border-left-color: var(--medium); }
+    .paper-card[data-level="low"] { border-left-color: var(--low); }
+    .paper-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+    .paper-card h3 { margin: 0 0 8px; font-size: 20px; line-height: 1.35; letter-spacing: 0; }
+    .meta { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+    .venue {
+      display: inline-flex;
+      width: fit-content;
+      margin: 0 0 10px;
+      padding: 4px 9px;
+      border-radius: 8px;
+      background: #eef6f3;
+      color: var(--accent-strong);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .score {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      padding: 6px 11px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+      background: #faf8f2;
+      white-space: nowrap;
+    }
+    .paper-card[data-level="high"] .score { color: var(--high); background: #fff1ee; border-color: #f0c7bf; }
+    .paper-card[data-level="medium"] .score { color: var(--medium); background: #fff7df; border-color: #ead49f; }
+    .paper-card[data-level="low"] .score { color: var(--low); background: #f2f5f7; border-color: #d4dde4; }
+    .summary { margin: 10px 0; }
+    details { margin-top: 10px; }
+    summary { cursor: pointer; color: var(--accent-strong); font-weight: 650; }
+    details[open] { border-top: 1px solid var(--border); padding-top: 10px; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .action {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 0 13px;
+      border: 1px solid rgba(19, 117, 109, 0.26);
+      border-radius: 8px;
+      background: #f1faf7;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 650;
+      transition: background 140ms ease, transform 140ms ease;
+    }
+    .action:hover { background: #e4f4f0; transform: translateY(-1px); }
+    .image-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 14px; }
+    .image-grid img {
+      width: 100%;
+      max-height: 320px;
+      object-fit: contain;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+    }
+    .skipped-list { margin: 0; padding-left: 18px; }
+    .skipped-list span, .skipped-list em { color: var(--muted); margin-left: 8px; font-size: 13px; }
+    .empty { display: none; padding: 24px; text-align: center; color: var(--muted); }
+    footer { color: var(--muted); font-size: 12px; padding: 28px 0; }
+    @media (max-width: 860px) {
+      h1 { font-size: 27px; }
+      .hero { grid-template-columns: 1fr; align-items: start; }
+      .hero-summary { min-width: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .toolbar-row { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .paper-top { display: block; }
+      .score { display: inline-flex; margin-bottom: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell hero">
+      <div>
+        <h1>科研文献摘要</h1>
+        <p class="subtitle">2026-04-30 · 浏览器阅读版 · 共 22 篇候选论文</p>
+      </div>
+      <div class="hero-summary" aria-label="相关性概览">
+        <div><strong>7</strong><span>高相关</span></div>
+        <div><strong>6</strong><span>中相关</span></div>
+        <div><strong>9</strong><span>低相关</span></div>
+      </div>
+    </div>
+  </header>
+  <nav class="toolbar" aria-label="阅读工具">
+    <div class="shell toolbar-row">
+      <input id="search" type="search" placeholder="搜索标题、摘要、主题、DOI 或来源邮件">
+      <div class="filters" role="group" aria-label="相关性筛选">
+        <button type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button type="button" data-filter="high" aria-pressed="false">高相关</button>
+        <button type="button" data-filter="medium" aria-pressed="false">中相关</button>
+        <button type="button" data-filter="low" aria-pressed="false">低相关</button>
+        <span class="secondary-actions">
+          <button type="button" id="expand-all">展开详情</button>
+          <button type="button" id="collapse-all">收起详情</button>
+        </span>
+      </div>
+    </div>
+  </nav>
+  <main class="shell">
+    <section class="stats" aria-label="总体统计">
+      <div class="stat"><strong>9</strong><span>邮件读取</span></div><div class="stat"><strong>26</strong><span>论文条目</span></div><div class="stat"><strong>4</strong><span>去重移除</span></div><div class="stat"><strong>7</strong><span>高相关</span></div><div class="stat"><strong>6</strong><span>中相关</span></div><div class="stat"><strong>9</strong><span>低相关</span></div><div class="stat"><strong>1</strong><span>跳过邮件</span></div>
+    </section>
+    
+    <section class="panel">
+      <h2>近期研究兴趣摘要</h2>
+      <p>近期关注计算材料科学与AI for materials，重点研究机器学习势函数、声子热输运、框架材料（COF/MOF/HOF）及二维材料，并探索AI辅助材料设计。</p>
+      <div class="topics"><span>机器学习原子间势函数</span><span>神经网络势函数</span><span>主动学习势函数训练</span><span>声子输运</span><span>热导率预测</span><span>非平衡分子动力学</span><span>晶格动力学</span><span>COF</span><span>MOF</span><span>HOF</span><span>二维材料</span><span>AI辅助材料设计</span></div>
+    </section>
+    <h2 class="section-title">论文列表</h2>
+    <section class="paper-list" id="papers" aria-live="polite">
+      
+      <article class="paper-card" data-level="high" data-search="towards scalable and efficient machine-learning force fields: the matpl package and its advancements on neuroevolution potentials 迈向可扩展高效的机器学习力场：matpl包及其在神经进化势上的进展 介绍materials potential library (matpl)包，专注于神经进化势等机器学习力场的开发，旨在提升计算材料科学中分子动力学模拟的准确性和效率。 直接涉及机器学习力场（mlip）的开发和软件实现，属于高优先级主题“机器学习原子间势函数”和“主动学习势函数训练”。 10.26434/chemrxiv.15001665 zheyong fan - 新的相关研究工作 机器学习原子间势函数 神经网络势函数 主动学习势函数训练">
+        <div class="paper-top">
+          <div>
+            <h3>1. 迈向可扩展高效的机器学习力场：MatPL包及其在神经进化势上的进展</h3>
+            <p class="meta">英文原题：Towards Scalable and Efficient Machine-Learning Force Fields: The MatPL package and Its Advancements on Neuroevolution Potentials</p>
+            <p class="venue">期刊/来源：未识别</p>
+          </div>
+          <div class="score">高相关 · 0.93</div>
+        </div>
+        <div class="topics"><span class="tag">机器学习原子间势函数</span><span class="tag">神经网络势函数</span><span class="tag">主动学习势函数训练</span></div>
+        <p class="summary">介绍Materials Potential Library (MatPL)包，专注于神经进化势等机器学习力场的开发，旨在提升计算材料科学中分子动力学模拟的准确性和效率。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>直接涉及机器学习力场（MLIP）的开发和软件实现，属于高优先级主题“机器学习原子间势函数”和“主动学习势函数训练”。</p>
+          <p class="meta">来源邮件：Zheyong Fan - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.26434/chemrxiv.15001665</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://chemrxiv.org/doi/pdf/10.26434/chemrxiv.15001665" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="high" data-search="nnp/cg-mm: embedding of all-atom neural network potentials into a coarse-grained molecular mechanics environment nnp/cg-mm：将全原子神经网络势嵌入粗粒化分子力学环境 该工作提出将全原子神经网络势（nnp）嵌入粗粒化分子力学（cg-mm）环境的方法，旨在结合nnp的精度与cg模拟的效率。 直接涉及神经网络势函数（nnp）的开发与应用，属于机器学习原子间势函数方向，与高优先级主题高度匹配。 10.26434/chemrxiv.15002177 zheyong fan - 新的相关研究工作 神经网络势函数 机器学习原子间势函数">
+        <div class="paper-top">
+          <div>
+            <h3>2. NNP/CG-MM：将全原子神经网络势嵌入粗粒化分子力学环境</h3>
+            <p class="meta">英文原题：NNP/CG-MM: Embedding of All-Atom Neural Network Potentials into a Coarse-Grained Molecular Mechanics Environment</p>
+            <p class="venue">期刊/来源：2026 Neural network potentials (NNPs)</p>
+          </div>
+          <div class="score">高相关 · 0.92</div>
+        </div>
+        <div class="topics"><span class="tag">神经网络势函数</span><span class="tag">机器学习原子间势函数</span></div>
+        <p class="summary">该工作提出将全原子神经网络势（NNP）嵌入粗粒化分子力学（CG-MM）环境的方法，旨在结合NNP的精度与CG模拟的效率。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>直接涉及神经网络势函数（NNP）的开发与应用，属于机器学习原子间势函数方向，与高优先级主题高度匹配。</p>
+          <p class="meta">来源邮件：Zheyong Fan - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.26434/chemrxiv.15002177</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://chemrxiv.org/doi/pdf/10.26434/chemrxiv.15002177" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="high" data-search="data-driven thermal and mechanical modeling of defective covalent organic frameworks 数据驱动的缺陷共价有机框架热力学和力学建模 利用数据驱动方法（机器学习）对含缺陷的二维cof进行热学和力学性能建模。 直接涉及cof的热学性能（热导率相关）和机器学习方法，与高优先级主题“cof”、“热导率预测”、“ai辅助材料设计”高度匹配。  hao ma（马浩） - 新的相关研究工作 cof 热导率预测 ai辅助材料设计">
+        <div class="paper-top">
+          <div>
+            <h3>3. 数据驱动的缺陷共价有机框架热力学和力学建模</h3>
+            <p class="meta">英文原题：Data-Driven Thermal and Mechanical Modeling of Defective Covalent Organic Frameworks</p>
+            <p class="venue">期刊/来源：arXiv preprint arXiv</p>
+          </div>
+          <div class="score">高相关 · 0.90</div>
+        </div>
+        <div class="topics"><span class="tag">COF</span><span class="tag">热导率预测</span><span class="tag">AI辅助材料设计</span></div>
+        <p class="summary">利用数据驱动方法（机器学习）对含缺陷的二维COF进行热学和力学性能建模。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>直接涉及COF的热学性能（热导率相关）和机器学习方法，与高优先级主题“COF”、“热导率预测”、“AI辅助材料设计”高度匹配。</p>
+          <p class="meta">来源邮件：Hao Ma（马浩） - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          
+        </details>
+        
+        <div class="actions"><a class="action" href="https://arxiv.org/pdf/2604.21494" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="high" data-search="electron alchemy with machine learned interatomic potentials: case studies of local charge in bond dissociation curves 利用机器学习原子间势的电子炼金术：键解离曲线中局部电荷的案例研究 探索机器学习原子间势（mlip）在描述键解离过程中局部电荷变化的能力，展示mlip在化学反应模拟中的潜力。 直接涉及机器学习原子间势（mlip）的应用，属于高优先级主题，且方法新颖（电子炼金术）。 10.26434/chemrxiv.15002288 han wang (王涵) - 新的相关研究工作 机器学习原子间势函数 神经网络势函数">
+        <div class="paper-top">
+          <div>
+            <h3>4. 利用机器学习原子间势的电子炼金术：键解离曲线中局部电荷的案例研究</h3>
+            <p class="meta">英文原题：Electron Alchemy with Machine Learned Interatomic Potentials: Case Studies of Local Charge in Bond Dissociation Curves</p>
+            <p class="venue">期刊/来源：未识别</p>
+          </div>
+          <div class="score">高相关 · 0.88</div>
+        </div>
+        <div class="topics"><span class="tag">机器学习原子间势函数</span><span class="tag">神经网络势函数</span></div>
+        <p class="summary">探索机器学习原子间势（MLIP）在描述键解离过程中局部电荷变化的能力，展示MLIP在化学反应模拟中的潜力。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>直接涉及机器学习原子间势（MLIP）的应用，属于高优先级主题，且方法新颖（电子炼金术）。</p>
+          <p class="meta">来源邮件：Han Wang (王涵) - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.26434/chemrxiv.15002288</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://chemrxiv.org/doi/pdf/10.26434/chemrxiv.15002288" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="high" data-search="making room for ai: multi-gpu molecular dynamics with deep potentials in gromacs 为ai腾出空间：gromacs中基于深度势的多gpu分子动力学 在经典md软件gromacs中集成深度势（deep potential），实现多gpu加速的ai驱动分子动力学模拟。 涉及深度势（神经网络势）在主流md软件中的实现，属于高优先级主题“神经网络势函数”和“非平衡分子动力学”相关。  han wang (王涵) - 新的相关研究工作 神经网络势函数 非平衡分子动力学">
+        <div class="paper-top">
+          <div>
+            <h3>5. 为AI腾出空间：GROMACS中基于深度势的多GPU分子动力学</h3>
+            <p class="meta">英文原题：Making Room for AI: Multi-GPU Molecular Dynamics with Deep Potentials in GROMACS</p>
+            <p class="venue">期刊/来源：arXiv preprint arXiv:2604.07276, 2026</p>
+          </div>
+          <div class="score">高相关 · 0.85</div>
+        </div>
+        <div class="topics"><span class="tag">神经网络势函数</span><span class="tag">非平衡分子动力学</span></div>
+        <p class="summary">在经典MD软件GROMACS中集成深度势（Deep Potential），实现多GPU加速的AI驱动分子动力学模拟。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及深度势（神经网络势）在主流MD软件中的实现，属于高优先级主题“神经网络势函数”和“非平衡分子动力学”相关。</p>
+          <p class="meta">来源邮件：Han Wang (王涵) - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          
+        </details>
+        
+        <div class="actions"><a class="action" href="https://arxiv.org/pdf/2604.07276" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="high" data-search="when are simple descriptors enough in mof adsorption machine learning? 何时简单描述符足以用于mof吸附机器学习？ 探讨在mof吸附性能的机器学习预测中，简单物理描述符是否足够，对比不同描述符的效果。 直接涉及mof的机器学习方法，属于高优先级主题“mof”和“ai辅助材料设计”。 10.26434/chemrxiv.15002252 jihan kim - 新的相关研究工作 mof ai辅助材料设计">
+        <div class="paper-top">
+          <div>
+            <h3>6. 何时简单描述符足以用于MOF吸附机器学习？</h3>
+            <p class="meta">英文原题：When Are Simple Descriptors Enough in MOF Adsorption Machine Learning?</p>
+            <p class="venue">期刊/来源：2026 Descriptor choice sits at the centre of MOF machine learning</p>
+          </div>
+          <div class="score">高相关 · 0.85</div>
+        </div>
+        <div class="topics"><span class="tag">MOF</span><span class="tag">AI辅助材料设计</span></div>
+        <p class="summary">探讨在MOF吸附性能的机器学习预测中，简单物理描述符是否足够，对比不同描述符的效果。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>直接涉及MOF的机器学习方法，属于高优先级主题“MOF”和“AI辅助材料设计”。</p>
+          <p class="meta">来源邮件：Jihan Kim - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.26434/chemrxiv.15002252</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://chemrxiv.org/doi/pdf/10.26434/chemrxiv.15002252" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="high" data-search="interpretable metal-chemistry and minimal-context descriptors for mof water and activation stability: a reproducible benchmark of descriptor sufficiency, split … 可解释的金属化学和最小上下文描述符用于mof水稳定性和活化稳定性：描述符充分性的可重复基准测试 开发可解释的描述符预测mof的水稳定性和活化稳定性，并进行基准测试。 涉及mof的机器学习预测，属于高优先级主题“mof”和“ai辅助材料设计”。 10.26434/chemrxiv.15002010 jihan kim - 新的相关研究工作 mof ai辅助材料设计">
+        <div class="paper-top">
+          <div>
+            <h3>7. 可解释的金属化学和最小上下文描述符用于MOF水稳定性和活化稳定性：描述符充分性的可重复基准测试</h3>
+            <p class="meta">英文原题：Interpretable Metal-Chemistry and Minimal-Context Descriptors for MOF Water and Activation Stability: A Reproducible Benchmark of Descriptor Sufficiency, Split …</p>
+            <p class="venue">期刊/来源：2026 Metal–organic frameworks (MOFs) are widely studied for gas storage</p>
+          </div>
+          <div class="score">高相关 · 0.82</div>
+        </div>
+        <div class="topics"><span class="tag">MOF</span><span class="tag">AI辅助材料设计</span></div>
+        <p class="summary">开发可解释的描述符预测MOF的水稳定性和活化稳定性，并进行基准测试。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及MOF的机器学习预测，属于高优先级主题“MOF”和“AI辅助材料设计”。</p>
+          <p class="meta">来源邮件：Jihan Kim - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.26434/chemrxiv.15002010</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://chemrxiv.org/doi/pdf/10.26434/chemrxiv.15002010" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="medium" data-search="atomistic modeling of thermal-processing rejuvenation in gese2 glass with machine learning potentials 利用机器学习势对gese2玻璃热加工回春的原子尺度模拟 使用机器学习势模拟gese2玻璃在热加工过程中的结构回春现象，揭示原子机制。 应用机器学习势进行材料模拟，但材料体系（硫系玻璃）非重点关注的框架材料或二维材料，且性质为结构回春而非热输运。  zheyong fan - 新的相关研究工作 机器学习原子间势函数">
+        <div class="paper-top">
+          <div>
+            <h3>8. 利用机器学习势对GeSe2玻璃热加工回春的原子尺度模拟</h3>
+            <p class="meta">英文原题：Atomistic modeling of thermal-processing rejuvenation in GeSe2 glass with machine learning potentials</p>
+            <p class="venue">期刊/来源：Computational Materials Science, 2026</p>
+          </div>
+          <div class="score">中相关 · 0.65</div>
+        </div>
+        <div class="topics"><span class="tag">机器学习原子间势函数</span></div>
+        <p class="summary">使用机器学习势模拟GeSe2玻璃在热加工过程中的结构回春现象，揭示原子机制。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>应用机器学习势进行材料模拟，但材料体系（硫系玻璃）非重点关注的框架材料或二维材料，且性质为结构回春而非热输运。</p>
+          <p class="meta">来源邮件：Zheyong Fan - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          
+        </details>
+        
+        <div class="actions"><a class="action" href="https://www.sciencedirect.com/science/article/pii/S092702562600193X" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="medium" data-search="spatially engineered of ionic chains in one-dimensional covalent organic frameworks for efficient uranium photoreduction 一维共价有机框架中离子链的空间工程用于高效铀光还原 通过在一维cof中引入离子链，改善其光催化还原u(vi)的性能。 涉及cof材料，但重点在光催化应用而非热输运或机器学习势，属于中等优先级。  ashutosh giri - 新的相关研究工作 cof">
+        <div class="paper-top">
+          <div>
+            <h3>9. 一维共价有机框架中离子链的空间工程用于高效铀光还原</h3>
+            <p class="meta">英文原题：Spatially engineered of ionic chains in one-dimensional covalent organic frameworks for efficient uranium photoreduction</p>
+            <p class="venue">期刊/来源：Journal of Colloid and</p>
+          </div>
+          <div class="score">中相关 · 0.60</div>
+        </div>
+        <div class="topics"><span class="tag">COF</span></div>
+        <p class="summary">通过在一维COF中引入离子链，改善其光催化还原U(VI)的性能。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及COF材料，但重点在光催化应用而非热输运或机器学习势，属于中等优先级。</p>
+          <p class="meta">来源邮件：Ashutosh Giri - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          
+        </details>
+        
+        <div class="actions"><a class="action" href="https://www.sciencedirect.com/science/article/pii/S0021979726005928" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="medium" data-search="one-dimensional fully sp2 carbon-linked covalent organic frameworks for powerful photoreduction of co2 一维全sp2碳连接共价有机框架用于高效光还原co2 合成一维全sp2碳连接的cof，并研究其光催化co2还原性能。 涉及cof材料，但重点在光催化而非热输运或机器学习，属于中等优先级。 10.26434/chemrxiv.15001397 ashutosh giri - 新的相关研究工作 cof">
+        <div class="paper-top">
+          <div>
+            <h3>10. 一维全sp2碳连接共价有机框架用于高效光还原CO2</h3>
+            <p class="meta">英文原题：One-Dimensional Fully sp2 Carbon-Linked Covalent Organic Frameworks for Powerful Photoreduction of CO2</p>
+            <p class="venue">期刊/来源：未识别</p>
+          </div>
+          <div class="score">中相关 · 0.55</div>
+        </div>
+        <div class="topics"><span class="tag">COF</span></div>
+        <p class="summary">合成一维全sp2碳连接的COF，并研究其光催化CO2还原性能。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及COF材料，但重点在光催化而非热输运或机器学习，属于中等优先级。</p>
+          <p class="meta">来源邮件：Ashutosh Giri - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.26434/chemrxiv.15001397</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://chemrxiv.org/doi/pdf/10.26434/chemrxiv.15001397" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="medium" data-search="in-plane mechanical property of terephthalate-based two-dimensional metal-organic frameworks 对苯二甲酸基二维金属-有机框架的面内力学性能 研究二维mof的面内弹性模量等力学性能。 涉及二维mof的力学性能，属于中等优先级主题“低维结构材料”和“材料结构设计”。  jihan kim - 新的相关研究工作 二维材料 mof">
+        <div class="paper-top">
+          <div>
+            <h3>11. 对苯二甲酸基二维金属-有机框架的面内力学性能</h3>
+            <p class="meta">英文原题：In-Plane Mechanical Property of Terephthalate-based Two-Dimensional Metal-Organic Frameworks</p>
+            <p class="venue">期刊/来源：Nanoscale, 2026</p>
+          </div>
+          <div class="score">中相关 · 0.55</div>
+        </div>
+        <div class="topics"><span class="tag">二维材料</span><span class="tag">MOF</span></div>
+        <p class="summary">研究二维MOF的面内弹性模量等力学性能。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及二维MOF的力学性能，属于中等优先级主题“低维结构材料”和“材料结构设计”。</p>
+          <p class="meta">来源邮件：Jihan Kim - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          
+        </details>
+        
+        <div class="actions"><a class="action" href="https://pubs.rsc.org/en/content/articlepdf/2026/nr/d6nr00361c" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="medium" data-search="liquid crystal elastomer-based thermal switch enabled by shape memory effect for tunable thermal conductivity 基于形状记忆效应的液晶弹性体热开关用于可调热导率 利用液晶弹性体的形状记忆效应实现热导率的可调开关。 涉及热导率调控，但材料体系为液晶弹性体，非框架材料或二维材料，属于中等优先级。  hao ma（马浩） - 新的相关研究工作 热导率">
+        <div class="paper-top">
+          <div>
+            <h3>12. 基于形状记忆效应的液晶弹性体热开关用于可调热导率</h3>
+            <p class="meta">英文原题：Liquid crystal elastomer-based thermal switch enabled by shape memory effect for tunable thermal conductivity</p>
+            <p class="venue">期刊/来源：Chemical Engineering</p>
+          </div>
+          <div class="score">中相关 · 0.50</div>
+        </div>
+        <div class="topics"><span class="tag">热导率</span></div>
+        <p class="summary">利用液晶弹性体的形状记忆效应实现热导率的可调开关。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及热导率调控，但材料体系为液晶弹性体，非框架材料或二维材料，属于中等优先级。</p>
+          <p class="meta">来源邮件：Hao Ma（马浩） - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          
+        </details>
+        
+        <div class="actions"><a class="action" href="https://www.sciencedirect.com/science/article/pii/S1385894726037617" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="medium" data-search="emergence of g-wave altermagnetism in three-dimensional metal–organic frameworks 三维金属-有机框架中g波交变磁性的出现 理论预测三维mof中g波交变磁性。 涉及mof的磁性性质，非热输运或机器学习，但属于框架材料的新奇性质，中等优先级。 10.1021/jacs.5c15427 jihan kim - 新的相关研究工作 mof">
+        <div class="paper-top">
+          <div>
+            <h3>13. 三维金属-有机框架中g波交变磁性的出现</h3>
+            <p class="meta">英文原题：Emergence of g-Wave Altermagnetism in Three-Dimensional Metal–Organic Frameworks</p>
+            <p class="venue">期刊/来源：Journal of the American Chemical Society, 2026</p>
+          </div>
+          <div class="score">中相关 · 0.45</div>
+        </div>
+        <div class="topics"><span class="tag">MOF</span></div>
+        <p class="summary">理论预测三维MOF中g波交变磁性。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及MOF的磁性性质，非热输运或机器学习，但属于框架材料的新奇性质，中等优先级。</p>
+          <p class="meta">来源邮件：Jihan Kim - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.1021/jacs.5c15427</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://pubs.acs.org/doi/abs/10.1021/jacs.5c15427" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="low" data-search="intercalated locking effect regulates the dynamic behavior of tetraphenylethylene metal–organic frameworks, and their thermofluorochromics, nh3 gas sensing … 插层锁定效应调控四苯乙烯金属-有机框架的动态行为及其热致荧光变色、nh3气体传感等性能 研究mof的动态行为及传感性能，涉及荧光和气体传感。 涉及mof，但重点在传感和荧光，非热输运或机器学习，且与高优先级主题关联弱。 10.1002/adfm.75522 jihan kim - 新的相关研究工作 mof">
+        <div class="paper-top">
+          <div>
+            <h3>14. 插层锁定效应调控四苯乙烯金属-有机框架的动态行为及其热致荧光变色、NH3气体传感等性能</h3>
+            <p class="meta">英文原题：Intercalated Locking Effect Regulates the Dynamic Behavior of Tetraphenylethylene Metal–Organic Frameworks, and Their Thermofluorochromics, NH3 Gas Sensing …</p>
+            <p class="venue">期刊/来源：Advanced Functional</p>
+          </div>
+          <div class="score">低相关 · 0.30</div>
+        </div>
+        <div class="topics"><span class="tag">MOF</span></div>
+        <p class="summary">研究MOF的动态行为及传感性能，涉及荧光和气体传感。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及MOF，但重点在传感和荧光，非热输运或机器学习，且与高优先级主题关联弱。</p>
+          <p class="meta">来源邮件：Jihan Kim - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.1002/adfm.75522</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://advanced.onlinelibrary.wiley.com/doi/abs/10.1002/adfm.75522" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="low" data-search="mechanochemical synthesis of phase-pure zirconium metal-organic cages 相纯锆基金属-有机笼的机械化学合成 发展机械化学方法合成zr-mocs。 涉及金属-有机笼（moc），非框架材料（cof/mof/hof），且不涉及热输运或机器学习。  jihan kim - 新的相关研究工作 ">
+        <div class="paper-top">
+          <div>
+            <h3>15. 相纯锆基金属-有机笼的机械化学合成</h3>
+            <p class="meta">英文原题：Mechanochemical Synthesis of Phase-Pure Zirconium Metal-Organic Cages</p>
+            <p class="venue">期刊/来源：Journal of Materials</p>
+          </div>
+          <div class="score">低相关 · 0.30</div>
+        </div>
+        
+        <p class="summary">发展机械化学方法合成Zr-MOCs。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及金属-有机笼（MOC），非框架材料（COF/MOF/HOF），且不涉及热输运或机器学习。</p>
+          <p class="meta">来源邮件：Jihan Kim - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          
+        </details>
+        
+        <div class="actions"><a class="action" href="https://pubs.rsc.org/en/content/articlepdf/2026/ta/d6ta00338a" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="low" data-search="introducing functionalities into directly synthesised amorphous uio-66-based metal-organic frameworks 将功能引入直接合成的无定形uio-66基金属-有机框架 报道水基室温合成无定形uio-66型mof并引入功能基团。 涉及mof合成，但非热输运或机器学习，与兴趣方向弱相关。  jihan kim - 新的相关研究工作 mof">
+        <div class="paper-top">
+          <div>
+            <h3>16. 将功能引入直接合成的无定形UiO-66基金属-有机框架</h3>
+            <p class="meta">英文原题：Introducing functionalities into directly synthesised amorphous UiO-66-based metal-organic frameworks</p>
+            <p class="venue">期刊/来源：Journal of Materials</p>
+          </div>
+          <div class="score">低相关 · 0.30</div>
+        </div>
+        <div class="topics"><span class="tag">MOF</span></div>
+        <p class="summary">报道水基室温合成无定形UiO-66型MOF并引入功能基团。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及MOF合成，但非热输运或机器学习，与兴趣方向弱相关。</p>
+          <p class="meta">来源邮件：Jihan Kim - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          
+        </details>
+        
+        <div class="actions"><a class="action" href="https://pubs.rsc.org/en/content/articlepdf/2026/ta/d5ta09975g" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="low" data-search="photo capture of water by single crystals of a nonporous metal–organic material 非多孔金属-有机材料单晶的光捕获水 报道非多孔mom在光照下从空气中捕获水的现象。 涉及金属-有机材料，但重点在光化学而非热输运或机器学习，且非多孔，与兴趣方向弱相关。 10.1021/jacs.6c01019 jihan kim - 新的相关研究工作 ">
+        <div class="paper-top">
+          <div>
+            <h3>17. 非多孔金属-有机材料单晶的光捕获水</h3>
+            <p class="meta">英文原题：Photo Capture of Water by Single Crystals of a Nonporous Metal–Organic Material</p>
+            <p class="venue">期刊/来源：Journal of the American</p>
+          </div>
+          <div class="score">低相关 · 0.25</div>
+        </div>
+        
+        <p class="summary">报道非多孔MOM在光照下从空气中捕获水的现象。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及金属-有机材料，但重点在光化学而非热输运或机器学习，且非多孔，与兴趣方向弱相关。</p>
+          <p class="meta">来源邮件：Jihan Kim - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.1021/jacs.6c01019</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://pubs.acs.org/doi/full/10.1021/jacs.6c01019" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="low" data-search="gel metal–organic frameworks in highly concentrated electrolyte promote stable solid-electrolyte interface on lithium metal anodes 高浓度电解质中的凝胶金属-有机框架促进锂金属负极上稳定的固态电解质界面 开发凝胶mof电解质用于锂金属电池。 涉及mof，但应用在电池领域，非热输运或机器学习，与兴趣方向弱相关。 10.1021/acsami.6c01046 jihan kim - 新的相关研究工作 mof">
+        <div class="paper-top">
+          <div>
+            <h3>18. 高浓度电解质中的凝胶金属-有机框架促进锂金属负极上稳定的固态电解质界面</h3>
+            <p class="meta">英文原题：Gel Metal–Organic Frameworks in Highly Concentrated Electrolyte Promote Stable Solid-Electrolyte Interface on Lithium Metal Anodes</p>
+            <p class="venue">期刊/来源：ACS Applied Materials &amp;</p>
+          </div>
+          <div class="score">低相关 · 0.25</div>
+        </div>
+        <div class="topics"><span class="tag">MOF</span></div>
+        <p class="summary">开发凝胶MOF电解质用于锂金属电池。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及MOF，但应用在电池领域，非热输运或机器学习，与兴趣方向弱相关。</p>
+          <p class="meta">来源邮件：Jihan Kim - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.1021/acsami.6c01046</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://pubs.acs.org/doi/abs/10.1021/acsami.6c01046" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="low" data-search="reversible covalent backbone engineering in disulfide-bridged diketopyrrolopyrrole-based polymers 二硫键桥联二酮吡咯并吡咯基聚合物的可逆共价骨架工程 研究有机半导体聚合物的可逆共价骨架工程，涉及二硫键。 材料体系为有机聚合物，非框架材料或二维材料，且不涉及热输运或机器学习势，与兴趣方向弱相关。 10.26434/chemrxiv.15002221 hao ma（马浩） - 新的相关研究工作 ">
+        <div class="paper-top">
+          <div>
+            <h3>19. 二硫键桥联二酮吡咯并吡咯基聚合物的可逆共价骨架工程</h3>
+            <p class="meta">英文原题：Reversible Covalent Backbone Engineering in Disulfide-Bridged Diketopyrrolopyrrole-based Polymers</p>
+            <p class="venue">期刊/来源：未识别</p>
+          </div>
+          <div class="score">低相关 · 0.20</div>
+        </div>
+        
+        <p class="summary">研究有机半导体聚合物的可逆共价骨架工程，涉及二硫键。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>材料体系为有机聚合物，非框架材料或二维材料，且不涉及热输运或机器学习势，与兴趣方向弱相关。</p>
+          <p class="meta">来源邮件：Hao Ma（马浩） - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.26434/chemrxiv.15002221</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://chemrxiv.org/doi/pdf/10.26434/chemrxiv.15002221" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="low" data-search="structural and mechanistic basis of selective proteolysis by zr-based metal–organic frameworks zr基金属-有机框架选择性蛋白水解的结构和机制基础 研究zr-mof作为蛋白酶模拟物的选择性蛋白水解机制。 涉及mof，但应用在生物催化，非热输运或机器学习，与兴趣方向弱相关。 10.1021/acs.chemmater.6c00428 jihan kim - 新的相关研究工作 mof">
+        <div class="paper-top">
+          <div>
+            <h3>20. Zr基金属-有机框架选择性蛋白水解的结构和机制基础</h3>
+            <p class="meta">英文原题：Structural and Mechanistic Basis of Selective Proteolysis by Zr-Based Metal–Organic Frameworks</p>
+            <p class="venue">期刊/来源：Chemistry of Materials, 2026</p>
+          </div>
+          <div class="score">低相关 · 0.20</div>
+        </div>
+        <div class="topics"><span class="tag">MOF</span></div>
+        <p class="summary">研究Zr-MOF作为蛋白酶模拟物的选择性蛋白水解机制。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>涉及MOF，但应用在生物催化，非热输运或机器学习，与兴趣方向弱相关。</p>
+          <p class="meta">来源邮件：Jihan Kim - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.1021/acs.chemmater.6c00428</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://pubs.acs.org/doi/abs/10.1021/acs.chemmater.6c00428" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="low" data-search="determining the ambimodality of transition state structures by the exploration of dimensionality-reduced potential energy surfaces 通过探索降维势能面确定过渡态结构的双模态性 该论文研究势能面上的过渡态双模态性，涉及反应路径，但未涉及机器学习势函数、声子输运或框架材料。 主题为反应动力学，与高优先级主题（机器学习势函数、声子输运、cof/mof等）无直接关联。 10.26434/chemrxiv.15002339 jörg behler - 新的相关研究工作 ">
+        <div class="paper-top">
+          <div>
+            <h3>21. 通过探索降维势能面确定过渡态结构的双模态性</h3>
+            <p class="meta">英文原题：Determining the Ambimodality of Transition State Structures by the Exploration of Dimensionality-Reduced Potential Energy Surfaces</p>
+            <p class="venue">期刊/来源：未识别</p>
+          </div>
+          <div class="score">低相关 · 0.20</div>
+        </div>
+        
+        <p class="summary">该论文研究势能面上的过渡态双模态性，涉及反应路径，但未涉及机器学习势函数、声子输运或框架材料。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>主题为反应动力学，与高优先级主题（机器学习势函数、声子输运、COF/MOF等）无直接关联。</p>
+          <p class="meta">来源邮件：Jörg Behler - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          <span>DOI: <code>10.26434/chemrxiv.15002339</code></span>
+        </details>
+        
+        <div class="actions"><a class="action" href="https://chemrxiv.org/doi/pdf/10.26434/chemrxiv.15002339" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+
+      <article class="paper-card" data-level="low" data-search="modeling xanthophyll excited states via cost-effective quantum chemistry methods and property-based diabatization 通过经济有效的量子化学方法和基于性质的二聚化模拟叶黄素激发态 该论文研究叶黄素激发态，使用量子化学方法，与机器学习势函数、声子热输运、框架材料或二维材料等研究兴趣无关。 主题为生物光化学，与高优先级主题（机器学习势函数、声子输运、cof/mof等）无直接关联。  jörg behler - 新的相关研究工作 ">
+        <div class="paper-top">
+          <div>
+            <h3>22. 通过经济有效的量子化学方法和基于性质的二聚化模拟叶黄素激发态</h3>
+            <p class="meta">英文原题：Modeling Xanthophyll Excited States via Cost-Effective Quantum Chemistry methods and Property-Based Diabatization</p>
+            <p class="venue">期刊/来源：未识别</p>
+          </div>
+          <div class="score">低相关 · 0.15</div>
+        </div>
+        
+        <p class="summary">该论文研究叶黄素激发态，使用量子化学方法，与机器学习势函数、声子热输运、框架材料或二维材料等研究兴趣无关。</p>
+        <details>
+          <summary>查看推荐理由与来源</summary>
+          <p>主题为生物光化学，与高优先级主题（机器学习势函数、声子输运、COF/MOF等）无直接关联。</p>
+          <p class="meta">来源邮件：Jörg Behler - 新的相关研究工作 | &quot;Google 学术搜索快讯&quot; &lt;scholaralerts-noreply@google.com&gt;</p>
+          
+        </details>
+        
+        <div class="actions"><a class="action" href="https://www.researchgate.net/profile/Laura-Pedraza-Gonzalez/publication/403612720_Modeling_Xanthophyll_Excited_States_via_Cost-Effective_Quantum_Chemistry_methods_and_Property-Based_Diabatization/links/69d6361a3c61894306748e66/Modeling-Xanthophyll-Excited-States-via-Cost-Effective-Quantum-Chemistry-methods-and-Property-Based-Diabatization.pdf" target="_blank" rel="noreferrer">打开原文</a></div>
+      </article>
+
+    </section>
+    <p class="empty" id="empty">当前筛选条件下没有匹配论文。</p>
+    <section class="panel"><h2>跳过的邮件</h2><ul class="skipped-list"><li><strong>Welcome to Claude — let’s get started</strong><span>Claude Team &lt;no-reply@email.claude.com&gt;</span><em>promotional keywords: unsubscribe</em></li></ul></section>
+    <footer>由本地 literature_digest 工作流生成。Markdown 与 HTML 文件包含相同 digest 内容，HTML 额外提供搜索、筛选和图片浏览。</footer>
+  </main>
+  <script type="application/json" id="digest-data">{&quot;high&quot;: 7, &quot;medium&quot;: 6, &quot;low&quot;: 9, &quot;total&quot;: 22}</script>
+  <script>
+    const search = document.querySelector('#search');
+    const buttons = Array.from(document.querySelectorAll('[data-filter]'));
+    const cards = Array.from(document.querySelectorAll('.paper-card'));
+    const expandAll = document.querySelector('#expand-all');
+    const collapseAll = document.querySelector('#collapse-all');
+    const empty = document.querySelector('#empty');
+    let activeFilter = 'all';
+
+    function applyFilters() {
+      const query = search.value.trim().toLowerCase();
+      let visible = 0;
+      for (const card of cards) {
+        const matchesLevel = activeFilter === 'all' || card.dataset.level === activeFilter;
+        const matchesSearch = !query || card.dataset.search.includes(query);
+        const show = matchesLevel && matchesSearch;
+        card.hidden = !show;
+        if (show) visible += 1;
+      }
+      empty.style.display = visible ? 'none' : 'block';
+    }
+
+    for (const button of buttons) {
+      button.addEventListener('click', () => {
+        activeFilter = button.dataset.filter;
+        for (const item of buttons) item.setAttribute('aria-pressed', String(item === button));
+        applyFilters();
+      });
+    }
+    search.addEventListener('input', applyFilters);
+    expandAll.addEventListener('click', () => {
+      for (const item of document.querySelectorAll('.paper-card:not([hidden]) details')) item.open = true;
+    });
+    collapseAll.addEventListener('click', () => {
+      for (const item of document.querySelectorAll('.paper-card details')) item.open = false;
+    });
+  </script>
+</body>
+</html>
