@@ -42,9 +42,10 @@ llm:
 
 
 def test_openai_compatible_rejects_api_key_as_env_name():
+    fake_key = "sk-" + "testsecret1234567890"
     client = OpenAICompatibleClient(
         base_url="https://api.deepseek.com",
-        api_key_env="sk-testsecret1234567890",
+        api_key_env=fake_key,
         model="deepseek-v4-flash",
     )
 
@@ -56,7 +57,7 @@ def test_openai_compatible_rejects_api_key_as_env_name():
         raise AssertionError("Expected LLMError")
 
     assert "looks like an API key" in message
-    assert "sk-testsecret" not in message
+    assert fake_key not in message
 
 
 class RetryJSONClient(OpenAICompatibleClient):

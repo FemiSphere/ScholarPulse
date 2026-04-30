@@ -10,6 +10,9 @@ outputs/
 logs/
 *.egg-info/
 .pytest_cache/
+.pytest-tmp-*/
+.pytest_tmp*/
+.tmp/
 __pycache__/
 *.py[cod]
 *.swp

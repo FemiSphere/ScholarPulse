@@ -2,7 +2,7 @@
 
 ## Project Goal
 
-This project builds a local daily literature digest workflow for me, a PhD student in computational materials and AI-for-materials.
+This project builds a local literature digest workflow for researchers who track papers through academic email alerts.
 
 The system shall:
 1. Read recent academic alert emails from a dedicated Gmail account that subscribes to Google Scholar alerts and other journals/sources.
@@ -10,12 +10,12 @@ The system shall:
 3. Deduplicate papers by DOI, URL, normalized title, and fuzzy title similarity.
 4. Rank relevance to the user's research interests.
 5. Translate and summarize paper titles, abstracts, and content into Chinese.
-6. Generate a daily Markdown digest.
+6. Generate Markdown and HTML digests.
 7. Optionally send the digest by email.
 
 ## Research Interests
 
-Prioritize papers related to:
+The default sample interests prioritize papers related to:
 - computational materials science
 - AI for materials
 - pentagonal materials (especially those with pentagon-based structural motifs, e.g., penta-graphene): atomic systems, framework materials (COF, MOF)
@@ -35,7 +35,7 @@ Prioritize papers related to:
 - Provide an option to mark emails as read (configurable).
 - The project shall also include a maintainable document for recent research interests, allowing the daily digest's recommendation priority to be updated based on textual descriptions of current research interests.
 
-## Expected Daily Output
+## Expected Output
 
 The daily digest should include:
 1. Overall statistics:
