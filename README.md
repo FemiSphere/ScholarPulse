@@ -16,7 +16,7 @@ ScholarPulse 是一个轻量级本地 Python 工作流，用来从 Google Schola
 
 ## 真实输出案例html预览
 
-查看 [真实输出 HTML 样例](https://raw.githubusercontent.com/FemiSphere/ScholarPulse/main/(真实输出html样例)2026-04-30-digest.html)（点击后建议右键 → “在新标签页中打开”）。
+查看 [真实输出 HTML 样例](https://github.com/FemiSphere/ScholarPulse/main/(真实输出html样例)2026-04-30-digest.html)（点击后建议右键 → “在新标签页中打开”）。
 
 ## 快速开始
 
